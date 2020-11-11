@@ -32,7 +32,7 @@ class PaperInfo(object):
         # given full_doc_link, can you get the full PDF from it?
         pass
 
-class PaperInfoPNAS(object):
+class PaperInfoPNAS(PaperInfo):
     def get_html(self):
         # use request module to get HTML from the Webpage at self.url
         pass
@@ -57,7 +57,7 @@ class PaperInfoPNAS(object):
         # given full_doc_link, can you get the full PDF from it?
         pass
 
-class PaperInfoPubMed(object):
+class PaperInfoPubMed(PaperInfo):
     def get_html(self):
         # use request module to get HTML from the Webpage at self.url
         pass
