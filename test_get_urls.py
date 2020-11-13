@@ -3,6 +3,8 @@ import unittest
 
 import get_urls
 
+# urls = get_urls.get_urls("test_papers.csv")
+# print(urls)
 
 class TestGetUrls(unittest.TestCase):
     def setUp(self):
@@ -23,3 +25,5 @@ class TestGetUrls(unittest.TestCase):
 
         first_url = urls[0]
         self.assertEqual('https://pubmed.ncbi.nlm.nih.gov/19113150/', first_url)
+
+unittest.main()
