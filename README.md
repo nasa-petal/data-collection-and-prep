@@ -12,3 +12,34 @@ Outline
   - Link to the full document
   - Check to see if the full document is open access
 - Put all of this info for each paper into a new CSV that will be used for MTurk
+
+## Usage
+
+`python prepare_mturk_csv.py airtable_papers.csv output.csv`
+
+
+## File Descriptions
+
+`get_doi.py` Script to pull DOI for any journal website. Includes parsing DOI from the link or from the text.
+
+`get_paper_info.py` Pulls Title, DOI, Abstract, Full Document Link, and whether if its Open Access from various journal sites. Instantiate an object of the correct journal class, e.g. for PubMed articles, type in 'pubmed' to create a `PaperInfoPubMed()` class.
+  - Title - `.get_title()`
+  - DOI - `.get_doi()`
+  - Abstract - `.get_abstract()`
+  - Full Document Link - `.get_full_doc_link()`
+  - Open Accesss? - `.is_open_access()`
+
+## PubMed Scraper
+
+To scrape from PubMed specifically, instantiate a `PaperInfoPubmed()` class. From there, you have access to 
+  - Title - `.get_title()`
+  - DOI - `.get_doi()`
+  - Abstract - `.get_abstract()`
+  - Similar Articles - `.get_similar_articles()`
+
+
+## Tests
+
+`test_get_doi.py` - Tests `get_doi.py` to ensure correct DOIs are found.
+
+`test_get_paper_info.py` - Tests `get_paper_info.py` to ensure correct titles are found.

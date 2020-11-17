@@ -21,6 +21,7 @@ urls = get_urls.get_urls(input_csv_filename)
 
 info_on_papers = []
 for url in urls:
+    #Determine the journal site name, and create corresponding object name
     title, doi, abstract, full_doc_link, is_open_access = get_paper_info.get_paper_info(url)
     info_on_papers.append((title, doi, abstract, full_doc_link, is_open_access))
 

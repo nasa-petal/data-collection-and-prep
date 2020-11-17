@@ -1,3 +1,4 @@
+#Testing script to see who are the top publishers in our Airtable
 import pandas as pd
 
 df = pd.read_csv('Papers for Crowdsourcing-Grid view.csv')

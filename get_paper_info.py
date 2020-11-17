@@ -102,7 +102,7 @@ class PaperInfoJEB(PaperInfo):
 class PaperInfoSpringer(PaperInfo):
     def get_title(self):
         # given self.html, get the title
-        title = self.soup.find('h1', class_='ChapterTitle').text.strip()
+        title = self.soup.find('h1', class_='c-article-title').text.strip()
         return title
 
     def get_doi(self):
@@ -186,9 +186,18 @@ class PaperInfoPubMed(PaperInfo):
         abstract = self.soup.find('div', class_='abstract-content selected').find('p').text.strip()
         return abstract
 
-    def get_full_doc_link(self):
-        # given self.html, get the full_doc_link
-        pass
+    def get_similar_articles(self):
+        articles = self.soup.find('ul', class_='articles-list', id="similar-articles-list").findAll('span', class_="docsum-journal-citation full-journal-citation")
+
+        dois = []
+        for article in articles:
+            doi = article.text
+            doi = doi.split('doi: ')[1].split(' Epub')[0]
+            dois.append(doi)
+        return dois
+    # def get_full_doc_link(self):
+    #     # given self.html, get the full_doc_link
+    #     pass
 
 
 
