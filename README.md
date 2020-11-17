@@ -21,6 +21,8 @@ Outline
 ## File Descriptions
 
 `get_doi.py` Script to pull DOI for any journal website. Includes parsing DOI from the link or from the text.
+   - Example: `python get_doi.py 'https://pubmed.ncbi.nlm.nih.gov/19113150/'`
+   - Returns: 10.1103/physreve.78.051902
 
 `get_paper_info.py` Pulls Title, DOI, Abstract, Full Document Link, and whether if its Open Access from various journal sites. Instantiate an object of the correct journal class, e.g. for PubMed articles, type in 'pubmed' to create a `PaperInfoPubMed()` class.
   - Title - `.get_title()`

@@ -2,6 +2,17 @@
 import requests
 from bs4 import BeautifulSoup
 import re
+import argparse
+import sys
+
+
+parser = argparse.ArgumentParser(description='Pull DOI from Any Journal Website')
+
+parser.add_argument('url', type=str, help='please input a journal website url')
+
+args = parser.parse_args()
+url = args.url
+
 
 def pull_doi(url):
     r = requests.get(url)
@@ -24,3 +35,4 @@ def pull_doi(url):
 
     return doi
 
+print(pull_doi(url))
