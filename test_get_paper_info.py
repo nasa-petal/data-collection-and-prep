@@ -55,3 +55,5 @@ class TestGetPaperInfo(unittest.TestCase):
         #title
         self.assertEqual(paper.get_title(), title)
         
+if __name__ == "main":
+    unittest.main()

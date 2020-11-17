@@ -5,15 +5,6 @@ import re
 import argparse
 import sys
 
-
-parser = argparse.ArgumentParser(description='Pull DOI from Any Journal Website')
-
-parser.add_argument('url', type=str, help='please input a journal website url')
-
-args = parser.parse_args()
-url = args.url
-
-
 def pull_doi(url):
     r = requests.get(url)
     html = r.text
@@ -35,4 +26,12 @@ def pull_doi(url):
 
     return doi
 
-print(pull_doi(url))
+if __name__ == "main":
+    parser = argparse.ArgumentParser(description='Pull DOI from Any Journal Website')
+
+    parser.add_argument('url', type=str, help='please input a journal website url')
+
+    args = parser.parse_args()
+    url = args.url
+
+    print(pull_doi(url))

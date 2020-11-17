@@ -212,12 +212,12 @@ paper_info_classes = {
 
 
 def get_paper_info(url):
+    #Determine the journal site name, and create corresponding object name
     journal = which_journal(url)
-
     paper_info_class = paper_info_classes[journal]
-
     paper_info_instance = paper_info_class(url)
 
+    #Retrieiving journal properties
     title = paper_info_instance.get_title()
     doi = paper_info_instance.get_doi()
     abstract = paper_info_instance.get_abstract()
