@@ -1,6 +1,4 @@
-import os
 import unittest
-import get_urls
 import get_paper_info
 import pandas as pd
 
@@ -54,6 +52,11 @@ class TestGetPaperInfo(unittest.TestCase):
         
         #title
         self.assertEqual(paper.get_title(), title)
+
+    def test_which_journal(self):
+        #Testing which_journal function
+        url = self.url_titles[0][1]
+        self.assertEqual(get_paper_info.which_journal(url), 'pubmed')
         
-if __name__ == "main":
+if __name__ == "__main__":
     unittest.main()

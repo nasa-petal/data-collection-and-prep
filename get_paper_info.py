@@ -17,7 +17,7 @@ class PaperInfo(object):
         self.url = url
         self.html = self.get_html()
         self.soup = BeautifulSoup(self.html, 'html.parser')
-        self.pdf_link = self.get_full_doc_link()
+        self.pdf_link = None
 
     def get_html(self):
         # use request module to get HTML from the Webpage at self.url
@@ -41,8 +41,10 @@ class PaperInfo(object):
         # given self.html, get the full_doc_link
         pass
 
-    def is_open_access(self, full_doc_link):
+    def is_open_access(self):
         # given full_doc_link, can you get the full PDF from it?
+        if self.pdf_link is None:
+            self.pdf_link = self.get_full_doc_link()
         r = requests.get(self.pdf_link)
         return r.ok
 
@@ -170,9 +172,6 @@ class PaperInfoPNAS(PaperInfo):
 
 class PaperInfoPubMed(PaperInfo):
     def get_title(self):
-        # given self.html, get the title
-        # #full-view-heading > h1
-        soup = BeautifulSoup(self.html, 'html.parser')
         title = self.soup.find(id="full-view-heading").find("h1").text.strip()
         return title
 
@@ -224,4 +223,4 @@ def get_paper_info(url):
     full_doc_link = paper_info_instance.get_full_doc_link()
     is_open_access = paper_info_instance.is_open_access(full_doc_link)
 
-    return (title, doi, abstract, full_doc_link, is_open_access)
+    return title, doi, abstract, full_doc_link, is_open_access

@@ -15,10 +15,10 @@ class TestGetDOI(unittest.TestCase):
         self.assertEqual(doi, '10.1103/physreve.78.051902')
 
     def test_get_doi_from_text(self):
-        url = self.urls[3]
+        url = self.urls[2]
         doi = get_doi.pull_doi(url)
 
-        self.assertEqual(doi, '10.1073/pnas.0604972103')
+        self.assertEqual(doi, '10.1242/jeb.226654')
 
 
 if __name__ == "__main__":

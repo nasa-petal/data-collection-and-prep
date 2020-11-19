@@ -1,7 +1,8 @@
-#Testing script to see who are the top publishers in our Airtable
+#Run script but after filtering by publishers first
 import pandas as pd
+import get_paper_info
 
-df = pd.read_csv('Papers for Crowdsourcing-Grid view.csv')
+df = pd.read_csv('airtable_papers.csv')
 df = df[df.URL.notnull()]
 
 def which_journal(row):
@@ -15,8 +16,30 @@ def which_journal(row):
     return publisher
 
 df['publisher'] = df.apply(which_journal, axis=1)
-#print(df['publisher'].unique())
-#print(df['publisher'].value_counts()[:20])
 
-print(df[df['publisher'] == 'link']['URL'].values[0])
+publishers = [
+    'pnas',
+    'pubmed',
+    'nature',
+    'jeb',
+    'springer',
+    'rsp'
+]
 
+df = df[df['publisher'].isin(publishers)]
+
+df['URL'] = df.apply(lambda x: x['URL'].split()[0].strip(), axis=1)
+#need to clean urls for all papers, only take first one, and remove all text after last /, only numbers at end of url
+df.to_csv('filtered_papers.csv')
+filtered = pd.read_csv('filtered_papers.csv')
+urls = filtered['URL'].values
+info_on_papers = []
+for url in urls:
+    print(url)
+    try:
+        title, doi, abstract, full_doc_link, is_open_access = get_paper_info.get_paper_info(url)
+        info_on_papers.append((url, title, doi, abstract, full_doc_link, is_open_access))
+    except:
+        continue
+
+output = pd.DataFrame(info_on_papers, columns=['url', 'title', 'doi', 'abstract', 'full_doc_link', 'is_open_access']).to_csv('output.csv')
