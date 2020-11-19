@@ -29,7 +29,7 @@ def pull_doi(url):
 
     return doi
 
-if __name__ == "main":
+if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Pull DOI from Any Journal Website')
 
     parser.add_argument('url', type=str, help='please input a journal website url')
