@@ -16,6 +16,13 @@ class TestGetPaperInfo(unittest.TestCase):
 
         #title
         self.assertEqual(paper.get_title(), title)
+        self.assertEqual('https://doi.org/10.1038/s42004-019-0202-8', paper.get_doi())
+        abstract = paper.get_abstract()
+        self.assertTrue(abstract.startswith('Cyphochilus beetle scales are amongst'))
+        self.assertTrue(abstract.endswith('via liquid–liquid phase separation.'))
+        full_doc_link = paper.get_full_doc_link()
+        self.assertEqual('https://www.nature.com/articles/s42004-019-0202-8.pdf', full_doc_link)
+        self.assertTrue(paper.is_open_access(full_doc_link))
 
     def test_pubmed(self):
         #pubmed article
