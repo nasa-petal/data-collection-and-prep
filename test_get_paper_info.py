@@ -52,6 +52,16 @@ class TestGetPaperInfo(unittest.TestCase):
         
         #title
         self.assertEqual(paper.get_title(), title)
+        
+
+    def test_rsp(self):
+        #Royal Society Publishing
+        url = self.url_titles[5][1]
+        title = self.url_titles[5][0]
+        paper = get_paper_info.PaperInfoRSP(url)
+
+        #title
+        self.assertEqual(paper.get_title(), title)
 
     def test_which_journal(self):
         #Testing which_journal function
