@@ -1,0 +1,69 @@
+ <!-- You must include this JavaScript file -->
+ <script src="https://assets.crowd.aws/crowd-html-elements.js"></script>
+
+ <!-- For the full list of available Crowd HTML Elements and their input/output documentation,
+       please refer to https://docs.aws.amazon.com/sagemaker/latest/dg/sms-ui-template-reference.html -->
+ 
+ <!-- You must include crowd-form so that your task submits answers to MTurk -->
+ <crowd-form answer-format="flatten-objects">
+ 
+     <!-- The crowd-classifier element will create a tool for the Worker to select the
+            correct answer to your question -->
+            
+     <crowd-input name="tag2" label="Copy and paste the phrase/section that corresponds to your label" required></crowd-input>
+     <crowd-input name="tag1" label="Type your own label here" ></crowd-input>
+     <crowd-input name="tag3" label="If you selected multiple labels, please rank them here." ></crowd-input>
+     
+     <crowd-classifier-multi-select
+         categories="['Attach', 'Change size/color', 'Chemically modify', 'Maintain ecological community', 'Maintain structural integrity', 'Move', 'Physically assemble/disassemble', 'Process information', 'Process resources', 'Protect from harm','I do not understand many words here!']"
+         header="Labeling Scientific Journal Articles with Biological Functions. Please click on the instructions to view full task details."
+         name="category"
+         exclusion-category="{ text: 'Does Not Apply (Not Relevant to Biomimicry)' }">
+         
+         <classification-target>
+           <p>
+               <strong>Title: </strong>
+               <!-- The search result item title will be substituted for the "title" attribute below 
+                      when you publish a batch with a CSV input file containing multiple search results -->
+               ${title}
+           </p>
+             <p>
+               <strong>Abstract: </strong>
+               <!-- The search text will be substituted for the "search_text" attribute here and 
+                      in the instructions below when you publish a batch with a CSV input file 
+                      containing multiple search results -->
+               ${abstract}
+           </p>
+             
+             <p>
+               <!-- The search result item url will be substituted for the "url" attribute below 
+                      when you publish a batch with a CSV input file containing multiple search results -->
+               <strong>Article Link: </strong> <a href="${url}" target="_blank">${url}</a>
+           </p>
+       </classification-target>
+ 
+         <!-- Use the short-instructions section for quick instructions that the Worker
+               will see while working on the task. Including some basic examples of 
+               good and bad answers here can help get good results. You can include 
+               any HTML here. -->
+         <short-instructions>From the list on the right, please choose the most fitting category (or categories) for the article. 
+         If the article is not related to biology or any of its functions, you may click "Does Not Apply" and skip to the next article.
+         You may also click on the link to view the full article. If needed, you can input your own label in the first box below.
+         In the second box, please copy and paste the section of the abstract/article that most corresponds with your selected label.</short-instructions>
+ 
+         <!-- Use the full-instructions section for more detailed instructions that the 
+               Worker can open while working on the task. Including more detailed 
+               instructions and additional examples of good and bad answers here can
+               help get good results. You can include any HTML here. -->
+         <full-instructions header="Document Classification Instructions">
+                 <p>Read the task carefully and inspect the title and abstract.</p>
+                 <p>Choose the appropriate label that best suits the title and abstract.</p>
+         </full-instructions>
+ 
+     </crowd-classifier-multi-select>
+     
+     
+ 
+ </crowd-form>
+ 
+ 
