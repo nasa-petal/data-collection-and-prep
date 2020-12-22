@@ -1,7 +1,8 @@
 import requests
 import pandas as pd
 
-table = 'Papers%20for%20Labelling%20v3'
+# table = 'Papers%20for%20Labelling%20v3'
+table = 'Colleen%20and%20Alex'
 
 def retrieve_airtable_data(table):
     '''
@@ -10,7 +11,7 @@ def retrieve_airtable_data(table):
     Parameters
     table : string name of the table
     '''
-    api_key = 'keyyJ7gJBHk1bWk5N'
+    api_key = 'XXXXX'
     headers = {
         "Authorization": "Bearer %s" % api_key,
     }
@@ -35,7 +36,7 @@ def retrieve_airtable_data(table):
     df = pd.DataFrame(airtable_rows)
 
     return df
-
+#
 df = retrieve_airtable_data(table)
 table = table.replace('%20', '_')
 df.to_csv('%s.csv' % table)
