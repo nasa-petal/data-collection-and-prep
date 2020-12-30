@@ -221,6 +221,7 @@ def get_paper_info(url):
     doi = paper_info_instance.get_doi()
     abstract = paper_info_instance.get_abstract()
     full_doc_link = paper_info_instance.get_full_doc_link()
-    is_open_access = paper_info_instance.is_open_access(full_doc_link)
+    # is_open_access = paper_info_instance.is_open_access()
+    is_open_access = True
 
     return title, doi, abstract, full_doc_link, is_open_access

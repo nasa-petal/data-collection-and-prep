@@ -6,11 +6,18 @@ import argparse
 import sys
 
 def pull_doi(url):
-    r = requests.get(url)
+    # r = requests.get(url)
+
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.97 Safari/537.36"}
+
+    r = requests.get(url,headers=headers)
     html = r.text
     soup = BeautifulSoup(html, 'html.parser')
     doi = ''
 
+    # qqq = soup.find_all('a')
+    # zzz = len(qqq)
     #Pulling first DOI from href
     for a in soup.find_all('a', href=True):
         link = a['href']
@@ -23,7 +30,10 @@ def pull_doi(url):
     #DOI not embedded in a href, but can only be pulled by searching the text
     if len(doi) == 0:
         print('pulling from text')
-        doi = soup(text=re.compile(r'doi'))[0].strip()
+        # need to use a more sophisticated doi regex
+        #   https://www.crossref.org/blog/dois-and-matching-regular-expressions/
+        #   https://www.regextester.com/93795
+        doi = soup(text=re.compile(r'/^10.\d{4,9}/[-._;()/:A-Z0-9]+$/i'))[0].strip()
         #removing all characters before first number in DOI
         doi = re.search('[0-9].*', doi)[0]
 
