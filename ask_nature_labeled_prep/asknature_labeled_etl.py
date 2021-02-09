@@ -111,6 +111,12 @@ class AskNatureLabeledEtl(object):
                 {'journal': journal, 'num_papers': num_papers, 'success': success, 'error': error,
                  'no_code': no_code, 'no_labels': no_labels}, ignore_index=True)
             status_summary_df = status_summary_df.sort_values(['num_papers'], ascending=[False])
+
+            # sums = status_summary_df.select_dtypes(include=['int64']).sum().rename('Totals')
+            #
+            # status_summary_df = pd.concat([sums, status_summary_df[:]]).reset_index(drop=True)
+
+
         with pd.option_context('display.max_rows', None,
                                'display.max_columns', None,
                                'display.max_colwidth', 100):
