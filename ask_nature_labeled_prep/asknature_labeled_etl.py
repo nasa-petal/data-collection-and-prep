@@ -110,7 +110,7 @@ class AskNatureLabeledEtl(object):
             status_summary_df = status_summary_df.append(
                 {'journal': journal, 'num_papers': num_papers, 'success': success, 'error': error,
                  'no_code': no_code, 'no_labels': no_labels}, ignore_index=True)
-            status_summary_df.sort_values(['num_papers'], ascending=[False])
+            status_summary_df = status_summary_df.sort_values(['num_papers'], ascending=[False])
         with pd.option_context('display.max_rows', None,
                                'display.max_columns', None,
                                'display.max_colwidth', 100):
