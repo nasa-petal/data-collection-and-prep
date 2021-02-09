@@ -117,6 +117,7 @@ class AskNatureLabeledEtl(object):
             # print(status_summary_df)
             status_summary_df.to_csv(csv_for_summary_status)
             status_summary_df.to_html(html_for_summary_status)
+            status_summary_df.to_html('../docs/asknature_labeled_summary_status.html')
 
 
     def abstract_fix(self, abstract):
