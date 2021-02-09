@@ -19,7 +19,8 @@ jobs:
         run: |
           pip install pandas requests
           pip install beautifulsoup4
-          python ask_nature_labeled_prep/asknature_labeled_etl.py
+          cd ask_nature_labeled_prep
+          python asknature_labeled_etl.py
 
       - name: Update Ask Nature Labeled Dashboard
         run: |
