@@ -17,7 +17,8 @@ jobs:
 
       - name: Generate graphs
         run: |
-          pip install pandas
+          pip install pandas requests
+          pip install beautifulsoup4
           python ask_nature_labeled_prep/asknature_labeled_etl.py
 
       - name: Update Ask Nature Labeled Dashboard
