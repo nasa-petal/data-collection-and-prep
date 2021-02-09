@@ -16,7 +16,9 @@ jobs:
           python-version: '3.8'
 
       - name: Generate graphs
-        run: python ask_nature_labeled_prep/asknature_labeled_etl.py
+        run: |
+          pip install pandas
+          python ask_nature_labeled_prep/asknature_labeled_etl.py
 
       - name: Update Ask Nature Labeled Dashboard
         run: |

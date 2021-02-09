@@ -144,7 +144,7 @@ etl.extract("../data/Colleen_and_Alex.csv")
 
 etl.raw_data_check()
 
-# etl.filter('plos')
+etl.filter('plos')
 
 etl.transform()
 
