@@ -113,7 +113,7 @@ class AskNatureLabeledEtl(object):
             status_summary_df = status_summary_df.sort_values(['num_papers'], ascending=[False])
 
             # sums = status_summary_df.select_dtypes(include=['int64']).sum().rename('Totals') # Series
-            sums = status_summary_df.sum().rename('Totals') # Series
+            sums = status_summary_df.sum().rename('Totals') #  Series
 
             row_df = pd.DataFrame([sums])
             status_summary_df = pd.concat([row_df, status_summary_df], ignore_index=True)
