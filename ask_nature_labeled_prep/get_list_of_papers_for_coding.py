@@ -37,10 +37,17 @@ def retrieve_airtable_data(table, api_key):
 
 
 if __name__ == "__main__":
-    table = 'Colleen%20and%20Alex'
-    api_key = 'keypvMblCRCGZeNU4'
 
-    df = retrieve_airtable_data(table, api_key)
+    from dotenv import load_dotenv
+    import os
+
+    load_dotenv('../.env')
+
+    AIRTABLE_API_KEY = os.getenv("AIRTABLE_API_KEY")
+
+    table = 'Colleen%20and%20Alex'
+
+    df = retrieve_airtable_data(table, AIRTABLE_API_KEY)
 
     urls = df['Primary lit site']
 
