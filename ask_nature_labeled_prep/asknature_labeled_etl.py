@@ -111,24 +111,12 @@ class AskNatureLabeledEtl(object):
                 {'journal': journal, 'num_papers': num_papers, 'success': success, 'error': error,
                  'no_code': no_code, 'no_labels': no_labels}, ignore_index=True)
             status_summary_df = status_summary_df.sort_values(['num_papers'], ascending=[False])
-
-            # sums = status_summary_df.select_dtypes(include=['int64']).sum().rename('Totals') # Series
-            sums = status_summary_df.sum().rename('Totals') #  Series
-
-            row_df = pd.DataFrame([sums])
-            status_summary_df = pd.concat([row_df, status_summary_df], ignore_index=True)
-
-
-            # status_summary_df = pd.concat([sums, status_summary_df[:]]).reset_index(drop=True)
-
-
         with pd.option_context('display.max_rows', None,
                                'display.max_columns', None,
                                'display.max_colwidth', 100):
             # print(status_summary_df)
             status_summary_df.to_csv(csv_for_summary_status)
             status_summary_df.to_html(html_for_summary_status)
-            status_summary_df.to_html('../docs/asknature_labeled_summary_status.html')
 
 
     def abstract_fix(self, abstract):
@@ -155,7 +143,7 @@ etl.extract("../data/Colleen_and_Alex.csv")
 
 etl.raw_data_check()
 
-# etl.filter('plos')
+etl.filter('uchicago')
 
 etl.transform()
 

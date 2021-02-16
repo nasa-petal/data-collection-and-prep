@@ -3,41 +3,50 @@ from bs4 import BeautifulSoup
 
 from urllib.parse import urlparse
 
-_prefixes = [
-    'www.journals', # order is important! Want to look for this first
-    'www',
-    'link',
-    'meetings',
-    'academic',
-    'pubs',
-    'journals',
-    'epub',
-    'connection',
-    'pdfs'
-]
+# _prefixes = [
+#     'www.journals', # order is important! Want to look for this first
+#     'www',
+#     'link',
+#     'meetings',
+#     'academic',
+#     'pubs',
+#     'journals',
+#     'epub',
+#     'connection',
+#     'pdfs'
+# ]
+
+_headers = {
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.96 Safari/537.36"
+}
+
 
 # dx, doi, publish, books, empty!, archive, web, 2008, members
 
-def which_journal(url):
-    # given the url, what is the journal that it is from, e.g. 'pnas'
+def which_literature_site(url):
+    # given the url, what is the literature site that it is from, e.g. 'pnas'
 
     url = url.strip()
 
     url_components = urlparse(url)
     netloc = url_components.netloc
 
-    for prefix in _prefixes:
-        if netloc.startswith(prefix):
-            publisher = netloc[len(prefix)+1:].split('.')[0]
-            return publisher
-    publisher = netloc.split('.')[0]
+    # for prefix in _prefixes:
+    #     if netloc.startswith(prefix):
+    #         # literature_site = netloc[len(prefix)+1:].split('.')[0]
+    #         literature_site = netloc[len(prefix)+1:]
+    #         return literature_site
+    # literature_site = netloc.split('.')[0]
+    literature_site = netloc
+
+    # print(literature_site)
 
     # if 'www' in url:
     #     publisher = url.split('.')[1]
     # else:
     #     publisher = url.split('.')[0].split('//')[1]
 
-    return publisher
+    return literature_site
 
 class PaperInfo(object):
     # Abstract class for all of the
@@ -70,13 +79,29 @@ class PaperInfo(object):
         pass
 
     def is_open_access(self):
-        # given full_doc_link, can you get the full PDF from it?
-        return "unknown"
-        # if self.pdf_link is None:
-        #     self.pdf_link = self.get_full_doc_link()
-        # r = requests.get(self.pdf_link)
-        # return r.ok
+        if self.pdf_link is '':
+            self.pdf_link = self.get_full_doc_link()
 
+        if self.pdf_link is '' or self.pdf_link is None:
+            return False
+
+        # stream=True defer downloading the response body
+        #   until you access the Response.content attribute
+        # Doing things this way makes sure we get all the headers we need
+        # calling requests.head didn't always seem to get the full
+        #  set of headers
+        # See https://requests.readthedocs.io/en/master/user/advanced/ for more info
+
+        with requests.get(self.pdf_link, headers = _headers, stream=True) as r:
+            if not r.ok:
+                return False
+            content_type = r.headers['Content-Type']
+            if not ( content_type.startswith('application/pdf') or content_type.startswith('text/html') ):
+                return False
+            if 'content-length' in r.headers and r.headers['content-length'] == 0 :
+                return False
+
+        return True
 
 class PaperInfoNature(PaperInfo):
     def get_title(self):
@@ -100,6 +125,7 @@ class PaperInfoNature(PaperInfo):
     def get_full_doc_link(self):
         # given self.html, get the full_doc_link
         pdf_link = self.url + '.pdf'
+        self.pdf_link = pdf_link
         return pdf_link
 
 
@@ -127,7 +153,7 @@ class PaperInfoJEB(PaperInfo):
             if 'pdf' in link:
                 if 'jeb.biologists.org' in link:
                     pdf_link = link
-
+        self.pdf_link = pdf_link
         return pdf_link
 
 class PaperInfoSpringer(PaperInfo):
@@ -149,6 +175,7 @@ class PaperInfoSpringer(PaperInfo):
     def get_full_doc_link(self):
         # given self.html, get the full_doc_link
         pdf_link = self.url.replace('chapter','content/pdf')+'.pdf'
+        self.pdf_link = pdf_link
         return pdf_link
 
 
@@ -171,6 +198,7 @@ class PaperInfoRSP(PaperInfo):
     def get_full_doc_link(self):
         # given self.html, get the full_doc_link
         pdf_link = self.url.replace('full', 'pdf')
+        self.pdf_link = pdf_link
         return pdf_link
 
 
@@ -196,6 +224,7 @@ class PaperInfoPNAS(PaperInfo):
             pdf_link = self.url + '.pdf'
         else:
             pdf_link = self.url + '.full.pdf'
+        self.pdf_link = pdf_link
         return pdf_link
 
 
@@ -206,16 +235,27 @@ class PaperInfoPubMed(PaperInfo):
 
     def get_doi(self):
         # given self.html, get the doi
-        doi = self.soup.find('span', class_='identifier doi').find('a').text.strip()
+        doi = ''
+        doi_node = self.soup.find('span', class_='identifier doi')
+        if doi_node:
+            a_node = doi_node.find('a')
+            if a_node:
+                doi = a_node.text.strip()
         return doi
 
     def get_abstract(self):
         # given self.html, get the abstract
-        abstract = self.soup.find('div', class_='abstract-content selected').find('p').text.strip()
+        abstract = ''
+        abstract_node = self.soup.find('div', class_='abstract-content selected')
+        if abstract_node:
+            paragraph_node = abstract_node.find('p')
+            if paragraph_node:
+               abstract = paragraph_node.text.strip()
         return abstract
 
     def get_similar_articles(self):
-        articles = self.soup.find('ul', class_='articles-list', id="similar-articles-list").findAll('span', class_="docsum-journal-citation full-journal-citation")
+        articles = self.soup.find('ul', class_='articles-list', id="similar-articles-list").findAll('span',
+                                            class_="docsum-journal-citation full-journal-citation")
 
         dois = []
         for article in articles:
@@ -223,48 +263,81 @@ class PaperInfoPubMed(PaperInfo):
             doi = doi.split('doi: ')[1].split(' Epub')[0]
             dois.append(doi)
         return dois
-    # def get_full_doc_link(self):
-    #     # given self.html, get the full_doc_link
-    #     pass
+
+    def get_full_doc_link(self):
+
+        full_doc_link = ''
+        full_text_node = self.soup.find(class_='full-text-links-list')
+        if full_text_node:
+            full_doc_pre_link = full_text_node.find('a').get('href')
+            r = requests.get(full_doc_pre_link, headers= _headers, allow_redirects=True)
+            if r.ok:
+                soup = BeautifulSoup(r.text, 'html.parser')
+                full_text_node = soup.find(class_='pdf-download')
+                if full_text_node:
+                    full_doc_link_relative = full_text_node.get('href')
+                    from urllib.parse import urljoin
+                    full_doc_link = urljoin(r.url, full_doc_link_relative)
+
+        self.pdf_link = full_doc_link
+        return full_doc_link
 
 class PaperInfoPLOS(PaperInfo):
     def get_title(self):
-        title_node = self.soup.find('h1', id='artTitle')
-        title = title_node.text.strip()
-        # if title_node:
-        #     title = title_node.text.strip()
-        # else:
-        #     print(f"could not find title node in {self.url}")
-        #     title = None
+        title_node = self.soup.find(id='artTitle')
+        if title_node:
+            title = title_node.text.strip()
+        else:
+            title = ''
         return title
 
     def get_doi(self):
-        # given self.html, get the doi
-        # ???
-        # doi = self.soup.find('span', class_='identifier doi').find('a').text.strip()
-        doi = None
+        doi_node = self.soup.find(id='artDoi')
+        if doi_node:
+            doi = doi_node.find('a').get('href')
+        else:
+            doi = ''
         return doi
 
     def get_abstract(self):
         # given self.html, get the abstract
+        abstract = ''
         abstract_node = self.soup.find(class_='abstract-content')
-        abstract = abstract_node.text.strip()
-        # if abstract_node:
-        #     abstract = abstract_node.text.strip()
-        # else:
-        #     print(f"could not find abstract node in {self.url}")
-        #     abstract = None
+        if abstract_node:
+            paragraph_nodes = abstract_node.find_all('p')  # this is a list
+            for paragraph_node in paragraph_nodes:
+                abstract += ' ' + paragraph_node.text.strip()
         return abstract
 
     def get_full_doc_link(self):
-        pdf_class = self.soup.find(class_='dload-pdf')
-        pdf_id = pdf_class.find(id='downloadPdf')
-        pdf_url = 'https://journals.plos.org' + pdf_id['href']
+        pdf_node = self.soup.find(id='downloadPdf')
+        if pdf_node :
+            pdf_url = 'https://journals.plos.org' + pdf_node['href']
+        else:
+            pdf_url = ''
+        self.pdf_link = pdf_url
         return pdf_url
-    # def get_full_doc_link(self):
-    #     # given self.html, get the full_doc_link
-    #     pass
-1
+
+    # def is_open_access(self):
+    #     if self.pdf_link is '':
+    #         self.pdf_link = self.get_full_doc_link()
+    #
+    #     # stream=True defer downloading the response body
+    #     #   until you access the Response.content attribute
+    #     # Doing things this way makes sure we get all the headers we need
+    #     # calling requests.head didn't always seem to get the full
+    #     #  set of headers
+    #     # See https://requests.readthedocs.io/en/master/user/advanced/ for more info
+    #     with requests.get(self.pdf_link, stream=True) as r:
+    #         if not r.ok:
+    #             return False
+    #         if r.headers['Content-Type'] != 'application/pdf':
+    #             return False
+    #         if r.headers['content-length'] == 0 :
+    #             return False
+    #
+    #     return True
+
 #
 # sciencedirect 133
 # science 69
@@ -287,26 +360,26 @@ class PaperInfoPLOS(PaperInfo):
 
 
 paper_info_classes = {
-    'pnas': PaperInfoPNAS,
-    'pubmed': PaperInfoPubMed,
-    'nature': PaperInfoNature,
-    'jeb': PaperInfoJEB,
-    'springer': PaperInfoSpringer,
-    'royalsocietypublishing': PaperInfoRSP,
-    'plos': PaperInfoPLOS
+    'www.pnas.org': PaperInfoPNAS,
+    'pubmed.ncbi.nlm.nih.gov': PaperInfoPubMed,
+    'www.nature.com': PaperInfoNature,
+    'jeb.biologists.org': PaperInfoJEB,
+    'link.springer.com': PaperInfoSpringer,
+    'royalsocietypublishing.org': PaperInfoRSP,
+    'journals.plos.org': PaperInfoPLOS
 }
 
 
 def get_paper_info(url):
-    #Determine the journal site name, and create corresponding object name
-    journal = which_journal(url)
+    #Determine the literature site name, and create corresponding object name
+    literature_site = which_literature_site(url)
 
-    if journal not in paper_info_classes:
-        return None, None, None, None, None
-    paper_info_class = paper_info_classes[journal]
+    if literature_site not in paper_info_classes:
+        return None
+    paper_info_class = paper_info_classes[literature_site]
     paper_info_instance = paper_info_class(url)
 
-    #Retrieiving journal properties
+    #Retrieiving paper properties
     title = paper_info_instance.get_title()
     doi = paper_info_instance.get_doi()
     abstract = paper_info_instance.get_abstract()
