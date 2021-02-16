@@ -1,0 +1,31 @@
+on:
+  push:
+    branches:
+      - ask-nature-labeled-data-prep
+  pull_request:
+    branches:
+      - ask-nature-labeled-data-prep
+jobs:
+  updateGraphs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/setup-python@v1
+        with:
+          python-version: '3.8'
+
+      - name: Generate graphs
+        run: |
+          pip install pandas requests
+          pip install beautifulsoup4
+          cd ask_nature_labeled_prep
+          python asknature_labeled_etl.py
+
+      - name: Update Ask Nature Labeled Dashboard
+        run: |
+          git config --global user.name 'hschilling'
+          git config --global user.email 'hschilling@nasa.gov'
+          git add .
+          git commit -am "Update dashboard"
+          git push
