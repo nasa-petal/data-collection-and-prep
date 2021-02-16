@@ -318,6 +318,31 @@ class PaperInfoPLOS(PaperInfo):
         self.pdf_link = pdf_url
         return pdf_url
 
+class PaperInfoUChicago(PaperInfo):
+    def get_title(self):
+        # given self.html, get the title
+        title = self.find(class_='citation__title').text.strip()
+        return title
+
+    def get_doi(self):
+        # given self.html, get the doi
+        doi_class = self.find(class_="section__body section__body--article-doi")
+        doi = doi_class.find('a').get('href')
+        return doi
+
+    def get_abstract(self):
+        # given self.html, get the abstract
+        try:
+            abstract = self.find(class_='abstractSection abstractInFull').text.strip()
+        except:
+            abstract = ""
+        return abstract
+
+    def get_full_doc_link(self):
+        pdf_url = ""
+        self.pdf_link = ""  # not sure what to put here?
+        return pdf_url
+
     # def is_open_access(self):
     #     if self.pdf_link is '':
     #         self.pdf_link = self.get_full_doc_link()
