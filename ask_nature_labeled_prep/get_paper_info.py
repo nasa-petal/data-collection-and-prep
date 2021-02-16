@@ -343,6 +343,35 @@ class PaperInfoUChicago(PaperInfo):
         self.pdf_link = ""  # not sure what to put here?
         return pdf_url
 
+class PaperInfoOUP(PaperInfo):
+    def get_title(self):
+        # given self.html, get the title
+        title = self.find(class_='wi-article-title article-title-main').text.strip()
+        return title
+
+    def get_doi(self):
+        # given self.html, get the doi
+        doi_class = self.find(class_='ww-citation-primary')
+        doi = doi_class.find('a').get('href')
+        return doi
+
+    def get_abstract(self):
+        # given self.html, get the abstract
+        try:
+            abstract_class = self.find(class_='abstract')
+            abstract = abstract_class.find(class_='chapter-para').text.strip()
+        except:
+            abstract = ""
+        return abstract
+
+    def get_full_doc_link(self):
+        try:
+            pdf_class = self.find(class_='al-link pdf article-pdfLink')
+            pdf_url = 'https://academic.oup.com/' + pdf_class.get('href')
+        except:
+            pdf_url = ""
+        return pdf_url
+        
     # def is_open_access(self):
     #     if self.pdf_link is '':
     #         self.pdf_link = self.get_full_doc_link()
