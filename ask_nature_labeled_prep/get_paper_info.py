@@ -339,9 +339,14 @@ class PaperInfoUChicago(PaperInfo):
         return abstract
 
     def get_full_doc_link(self):
-        pdf_url = ""
-        self.pdf_link = ""  # not sure what to put here?
-        return pdf_url
+        pdf_class = soup.find(class_='ctrl--primary ctrl--full-text ctrl')
+        if not pdf_class:
+            pdf_class = soup.find(class_='ctrl--primary ctrl--pdf ctrl')
+        if pdf_class:
+            pdf = 'https://www.journals.uchicago.edu/' + pdf_class.get('href')
+        else:
+            pdf = ''
+        return pdf
 
 class PaperInfoOUP(PaperInfo):
     def get_title(self):
@@ -371,7 +376,7 @@ class PaperInfoOUP(PaperInfo):
         except:
             pdf_url = ""
         return pdf_url
-        
+
     # def is_open_access(self):
     #     if self.pdf_link is '':
     #         self.pdf_link = self.get_full_doc_link()
