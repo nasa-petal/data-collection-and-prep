@@ -50,11 +50,11 @@ def filter_by_count(df, count):
 def transform(df):
     # Make an empty table for the results of the transform
     transformed_df = pd.DataFrame(columns=['title', 'doi', 'abstract', 'labels', 'url',
-                                           'journal',
+                                           'literature_site',
                                            'full_doc_link', 'is_open_access'])
 
     # Need to keep track of the status of each attempt to get paper info
-    status_df = pd.DataFrame(columns=['url', 'journal', 'get_paper_info_result', 'num_labels',
+    status_df = pd.DataFrame(columns=['url', 'literature_site', 'get_paper_info_result', 'num_labels',
                                       'error_traceback', 'scrape_time'])
     status_df.astype(int)  # No floats
 
@@ -87,7 +87,7 @@ def transform(df):
                     'abstract': abstract,
                     'labels': labels,
                     'url': url,
-                    'journal': literature_site,
+                    'literature_site': literature_site,
                     'full_doc_link': full_doc_link,
                     'is_open_access': is_open_access,
                 }, ignore_index=True)
@@ -101,7 +101,7 @@ def transform(df):
         scrape_time = time.time() - start_time
         status_df = status_df.append({
             'url': url,
-            'journal': literature_site,
+            'literature_site': literature_site,
             'get_paper_info_result': get_paper_info_result,
             'num_labels': len(labels),
             'error_traceback': error_traceback,
@@ -133,10 +133,10 @@ if __name__ == "__main__":
     raw_data_check(df)
 
     # df = filter_by_lit_site(df, 'pubmed.ncbi.nlm.nih.gov')
-    df = filter_by_lit_site(df, 'www.pnas.org')
+    # df = filter_by_lit_site(df, 'www.pnas.org')
 
-    print("filtered data check")
-    raw_data_check(df)
+    # print("filtered data check")
+    # raw_data_check(df)
 
 
     # df = filter_by_count(df, 10)
