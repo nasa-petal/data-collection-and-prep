@@ -321,27 +321,27 @@ class PaperInfoPLOS(PaperInfo):
 class PaperInfoUChicago(PaperInfo):
     def get_title(self):
         # given self.html, get the title
-        title = self.find(class_='citation__title').text.strip()
+        title = self.soup.find(class_='citation__title').text.strip()
         return title
 
     def get_doi(self):
         # given self.html, get the doi
-        doi_class = self.find(class_="section__body section__body--article-doi")
+        doi_class = self.soup.find(class_="section__body section__body--article-doi")
         doi = doi_class.find('a').get('href')
         return doi
 
     def get_abstract(self):
         # given self.html, get the abstract
         try:
-            abstract = self.find(class_='abstractSection abstractInFull').text.strip()
+            abstract = self.soup.find(class_='abstractSection abstractInFull').text.strip()
         except:
             abstract = ""
         return abstract
 
     def get_full_doc_link(self):
-        pdf_class = soup.find(class_='ctrl--primary ctrl--full-text ctrl')
+        pdf_class = self.soup.find(class_='ctrl--primary ctrl--full-text ctrl')
         if not pdf_class:
-            pdf_class = soup.find(class_='ctrl--primary ctrl--pdf ctrl')
+            pdf_class = self.soup.find(class_='ctrl--primary ctrl--pdf ctrl')
         if pdf_class:
             pdf = 'https://www.journals.uchicago.edu/' + pdf_class.get('href')
         else:
@@ -351,19 +351,24 @@ class PaperInfoUChicago(PaperInfo):
 class PaperInfoOUP(PaperInfo):
     def get_title(self):
         # given self.html, get the title
-        title = self.find(class_='wi-article-title article-title-main').text.strip()
+        title = ''
+        title_node = self.soup.find(class_='wi-article-title article-title-main')
+        if title_node:
+            title = title_node.text.strip()
         return title
 
     def get_doi(self):
         # given self.html, get the doi
-        doi_class = self.find(class_='ww-citation-primary')
-        doi = doi_class.find('a').get('href')
+        doi = ''
+        doi_class = self.soup.find(class_='ww-citation-primary')
+        if doi_class:
+            doi = doi_class.find('a').get('href')
         return doi
 
     def get_abstract(self):
         # given self.html, get the abstract
         try:
-            abstract_class = self.find(class_='abstract')
+            abstract_class = self.soup.find(class_='abstract')
             abstract = abstract_class.find(class_='chapter-para').text.strip()
         except:
             abstract = ""
@@ -371,7 +376,7 @@ class PaperInfoOUP(PaperInfo):
 
     def get_full_doc_link(self):
         try:
-            pdf_class = self.find(class_='al-link pdf article-pdfLink')
+            pdf_class = self.soup.find(class_='al-link pdf article-pdfLink')
             pdf_url = 'https://academic.oup.com/' + pdf_class.get('href')
         except:
             pdf_url = ""
@@ -425,7 +430,9 @@ paper_info_classes = {
     'jeb.biologists.org': PaperInfoJEB,
     'link.springer.com': PaperInfoSpringer,
     'royalsocietypublishing.org': PaperInfoRSP,
-    'journals.plos.org': PaperInfoPLOS
+    'journals.plos.org': PaperInfoPLOS,
+    'academic.oup.com': PaperInfoOUP,
+    'www.journals.uchicago.edu': PaperInfoUChicago,
 }
 
 
