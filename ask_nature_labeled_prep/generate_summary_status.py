@@ -28,6 +28,7 @@ status_summary_df = pd.concat([pd.DataFrame([sums]), status_summary_df[:]]).rese
 cols_to_order = ['literature_site',]
 new_columns = cols_to_order + (status_summary_df.columns.drop(cols_to_order).tolist())
 status_summary_df = status_summary_df[new_columns]
+status_summary_df.iat[0,0] = "Totals"
 
 with pd.option_context('display.max_rows', None,
                        'display.max_columns', None,
