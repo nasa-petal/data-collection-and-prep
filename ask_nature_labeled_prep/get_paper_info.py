@@ -34,7 +34,7 @@ class PaperInfo(object):
 
     def get_html(self):
         # use request module to get HTML from the Webpage at self.url
-        r = requests.get(self.url)
+        r = requests.get(self.url, headers = _headers)
         html = r.text
         return html
 
@@ -404,6 +404,9 @@ class PaperInfoScienceDirect(PaperInfo):
         self.pdf_link = pdf_link
         return pdf_link
 
+    def time_delay(self):
+        time.sleep(random.randint(5, 10))
+
     # def is_open_access(self):
     #     if self.pdf_link is '':
     #         self.pdf_link = self.get_full_doc_link()
@@ -455,6 +458,7 @@ paper_info_classes = {
     'journals.plos.org': PaperInfoPLOS,
     'academic.oup.com': PaperInfoOUP,
     'www.journals.uchicago.edu': PaperInfoUChicago,
+    'www.sciencedirect.com': PaperInfoScienceDirect,
 }
 
 
