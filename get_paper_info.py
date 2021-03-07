@@ -198,7 +198,40 @@ class PaperInfoPubMed(PaperInfo):
     #     # given self.html, get the full_doc_link
     #     pass
 
+class PaperInfoScienceDirect(PaperInfo):
+    def get_title(self):
+        # given self.html, get the title
+        title = self.soup.find(class_='title-text').text.strip()
+        return title
 
+    def get_doi(self):
+        # given self.html, get the doi
+        doi_tag = self.soup.find(id='doi-link')
+        doi = doi_tag.find('a').get('href')
+        return doi
+
+    def get_abstract(self):
+        # given self.html, get the abstract
+        abstract = ''
+        abstract_tag = self.soup.find(class_='abstract author')
+        if abstract_tag:
+            abstract_div = abstract_tag.find('div')
+            abstract_paras = abstract_div.find_all('p')
+            for i in abstract_paras:
+                abstract += i.text.strip()
+        return abstract
+
+    def get_full_doc_link(self):
+        pdf_link = ''
+        get_access = self.soup.find(class_='pdf-download-label-short u-hide-from-lg')
+        if get_access.text.strip() != 'Get Access':
+            pdf_link = self.url
+            if 'abs/' in pdf_link:
+                pdf_link = pdf_link.replace('abs/', '')
+            if '?via%3Dihub' in pdf_link:
+                pdf_link = pdf_link.split('?via%3Dihub', 1)[0]
+            pdf_link = pdf_link + '/pdfft'
+        return pdf_link
 
 paper_info_classes = {
     'pnas': PaperInfoPNAS,
@@ -206,7 +239,8 @@ paper_info_classes = {
     'nature': PaperInfoNature,
     'jeb': PaperInfoJEB,
     'springer': PaperInfoSpringer,
-    'rsp': PaperInfoRSP
+    'rsp': PaperInfoRSP,
+    'sciencedirect': PaperInfoScienceDirect
 }
 
 

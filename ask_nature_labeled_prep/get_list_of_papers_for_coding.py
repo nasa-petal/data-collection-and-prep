@@ -51,7 +51,7 @@ if __name__ == "__main__":
 
     urls = df['Primary lit site']
 
-    search_string = 'plos'
+    search_string = 'sciencedirect'
 
     urls = [ url for url in urls if search_string in url ]
     pprint.pprint(list(urls))
