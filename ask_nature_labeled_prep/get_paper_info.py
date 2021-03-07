@@ -415,6 +415,7 @@ class PaperInfoScienceDirect(PaperInfo):
             if '?via%3Dihub' in pdf_link:
                 pdf_link = pdf_link.split('?via%3Dihub', 1)[0]
             pdf_link = pdf_link + '/pdfft'
+        self.pdf_link = pdf_link
         return pdf_link
 
     # def is_open_access(self):
