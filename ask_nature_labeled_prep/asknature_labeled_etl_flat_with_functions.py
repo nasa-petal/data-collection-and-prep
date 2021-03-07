@@ -54,7 +54,10 @@ def transform(df):
                                            'full_doc_link', 'is_open_access'])
 
     # Need to keep track of the status of each attempt to get paper info
-    status_df = pd.DataFrame(columns=['url', 'literature_site', 'get_paper_info_result', 'num_labels',
+    status_df = pd.DataFrame(columns=['url', 'literature_site', 'get_paper_info_result',
+                                      'title_len', 'abstract_len', 'doi_len',
+                                      'pdf_len', 'is_open_access',
+                                      'num_labels',
                                       'error_traceback', 'scrape_time'])
     status_df.astype(int)  # No floats
 
@@ -76,7 +79,7 @@ def transform(df):
             paper_info = get_paper_info(url)
             if paper_info:
                 title, doi, abstract, full_doc_link, is_open_access = paper_info
-                get_paper_info_result = 'success'
+                get_paper_info_result = 'no_exception'
 
                 # fix abstract
                 abstract = abstract_fix(abstract)
@@ -99,10 +102,16 @@ def transform(df):
             error_traceback = traceback.format_exc()
 
         scrape_time = time.time() - start_time
+
         status_df = status_df.append({
             'url': url,
             'literature_site': literature_site,
             'get_paper_info_result': get_paper_info_result,
+            'title_len': len(title) if isinstance(title,str) else 0,
+            'abstract_len': len(abstract) if isinstance(abstract,str) else 0,
+            'doi_len': len(doi) if isinstance(doi,str) else 0,
+            'full_doc_link_len': len(full_doc_link) if isinstance(full_doc_link,str) else 0,
+            'is_open_access': is_open_access,
             'num_labels': len(labels),
             'error_traceback': error_traceback,
             'scrape_time': scrape_time,
@@ -133,7 +142,7 @@ if __name__ == "__main__":
     raw_data_check(df)
 
     # df = filter_by_lit_site(df, 'pubmed.ncbi.nlm.nih.gov')
-    # df = filter_by_lit_site(df, 'www.pnas.org')
+    # df = filter_by_lit_site(df, 'www.journals.uchicago.edu')
 
     # print("filtered data check")
     # raw_data_check(df)
