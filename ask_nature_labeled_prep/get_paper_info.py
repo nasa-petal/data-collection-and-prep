@@ -52,6 +52,7 @@ class PaperInfo(object):
     # Abstract class for all of the
     def __init__(self, url):
         self.url = url
+        self.doi = None
         self.html = self.get_html()
         self.soup = BeautifulSoup(self.html, 'html.parser')
         self.pdf_link = None
@@ -436,16 +437,15 @@ class PaperInfoSpringer(PaperInfo):
             doi = doi_tag.find('a').get('href')
         else:
             doi = self.soup.find(id='doi-url').text.strip()
+        self.doi = doi
         return doi
 
     def get_abstract(self):
         # given self.html, get the abstract
         # API request
         base_url = "http://api.springernature.com/meta/v2/json"
-        q = "doi:" + '"' + self.doi.split(".org/")[
-            1] + '"'  # quotes are needed around the DOI for some requests to work
-        api_key = "43a171cf2b783215afd880eb4bed5df4"
-        params = {"q": q, "api_key": api_key}
+        q = "doi:" + '"' + self.doi.split(".org/")[1] + '"'  # quotes are needed around the DOI for some requests to work
+        params = {"q": q, "api_key": process.env.SPRINGER_API_KEY}
         response = requests.get(base_url, params=params).json()
         # scrape from API response
         for i in response["records"]:
