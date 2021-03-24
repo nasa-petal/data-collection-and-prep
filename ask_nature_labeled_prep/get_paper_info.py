@@ -3,6 +3,9 @@ from bs4 import BeautifulSoup
 
 from urllib.parse import urlparse
 
+from dotenv import load_dotenv
+import os
+
 # _prefixes = [
 #     'www.journals', # order is important! Want to look for this first
 #     'www',
@@ -80,10 +83,10 @@ class PaperInfo(object):
         pass
 
     def is_open_access(self):
-        if self.pdf_link is '':
+        if self.pdf_link == '':
             self.pdf_link = self.get_full_doc_link()
 
-        if self.pdf_link is '' or self.pdf_link is None:
+        if self.pdf_link == '' or self.pdf_link is None:
             return False
 
         # stream=True defer downloading the response body
@@ -445,7 +448,9 @@ class PaperInfoSpringer(PaperInfo):
         # API request
         base_url = "http://api.springernature.com/meta/v2/json"
         q = "doi:" + '"' + self.doi.split(".org/")[1] + '"'  # quotes are needed around the DOI for some requests to work
-        params = {"q": q, "api_key": process.env.SPRINGER_API_KEY}
+        load_dotenv('../.env')
+        SPRINGER_API_KEY = os.getenv("SPRINGER_API_KEY")
+        params = {"q": q, "api_key": SPRINGER_API_KEY}
         response = requests.get(base_url, params=params).json()
         # scrape from API response
         for i in response["records"]:
