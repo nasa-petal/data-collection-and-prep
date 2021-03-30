@@ -149,7 +149,7 @@ if __name__ == "__main__":
     raw_data_check(df)
 
     # df = filter_by_lit_site(df, 'pubmed.ncbi.nlm.nih.gov')
-    # df = filter_by_lit_site(df, 'rsta.2009.0022')
+    df = filter_by_lit_site(df, 'springer')
 
     # print("filtered data check")
     # raw_data_check(df)
