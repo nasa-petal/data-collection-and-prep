@@ -9,13 +9,15 @@ def labels_fix(labels):
     '''
     Deal with empty labels and convert them to a list if they are not
     '''
-    if isinstance(labels, str):
-        labels = labels.replace("[", "")
-        labels = labels.replace("]", "")
-        labels = labels.replace("\'", "")
-        labels = labels.split(', ')
-    else:
+    if not isinstance(labels, str):
         labels = []
+    # if isinstance(labels, str) and len(labels) > 0:
+    #     labels = labels.replace("[", "")
+    #     labels = labels.replace("]", "")
+    #     labels = labels.replace("\'", "")
+    #     labels = labels.split(', ')
+    # else:
+    #     labels = []
     return labels
 
 def abstract_fix( abstract):
@@ -64,6 +66,8 @@ def transform(df):
     # Loop through the records to get paper info
     for index, row in df[['Primary lit site', 'Functions Level I','Abstract']].iterrows():
         url, labels, abstract = row
+        # if pd.isnull(labels):
+        #     labels = ''
         print(f"{index} url: {url}")
 
         start_time = time.time()
@@ -71,6 +75,8 @@ def transform(df):
         literature_site = which_literature_site(url)
 
         # continue
+        title = doi = abstract = full_doc_link = ''
+        is_open_access = False
 
         # fix labels
         labels = labels_fix(labels)
@@ -98,7 +104,7 @@ def transform(df):
                 get_paper_info_result = 'no_code'
             error_traceback = ""
         except Exception as err:
-            get_paper_info_result = 'error'
+            get_paper_info_result = 'exception'
             error_traceback = traceback.format_exc()
 
         scrape_time = time.time() - start_time
@@ -137,12 +143,13 @@ def transformed_data_check(df):
         print(df.describe())
 
 if __name__ == "__main__":
+    # df = extract("../data/Colleen_and_Alex_export_from_airtable.csv")
     df = extract("../data/Colleen_and_Alex.csv")
 
     raw_data_check(df)
 
     # df = filter_by_lit_site(df, 'pubmed.ncbi.nlm.nih.gov')
-    # df = filter_by_lit_site(df, 'www.journals.uchicago.edu')
+    # df = filter_by_lit_site(df, 'rsta.2009.0022')
 
     # print("filtered data check")
     # raw_data_check(df)
