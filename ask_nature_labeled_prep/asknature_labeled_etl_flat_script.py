@@ -29,7 +29,7 @@ def abstract_fix( abstract):
 
 
 ### Load ###
-raw_df = pd.read_csv("../data/Colleen_and_Alex.csv")
+raw_df = pd.read_csv("../data/Colleen_and_Alex_export_from_airtable.csv")
 
 ### Data check ###
 unlabeled_papers = raw_df[raw_df['Functions Level I'].isna()]['Primary lit site']
