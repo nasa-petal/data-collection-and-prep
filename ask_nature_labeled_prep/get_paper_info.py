@@ -382,7 +382,7 @@ class PaperInfoOUP(PaperInfo):
         return pdf_url
 
     def time_delay(self):
-        time.sleep(random.randint(5, 10))
+        time.sleep(random.randint(20, 40))
 
 class PaperInfoScienceDirect(PaperInfo):
     def get_title(self):
