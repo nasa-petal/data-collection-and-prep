@@ -1,7 +1,6 @@
-import requests
-from bs4 import BeautifulSoup
-
+import random
 from urllib.parse import urlparse
+import time
 
 from dotenv import load_dotenv
 import os
@@ -18,6 +17,8 @@ import os
 #     'connection',
 #     'pdfs'
 # ]
+import requests
+from bs4 import BeautifulSoup
 
 _headers = {
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.96 Safari/537.36"
@@ -34,20 +35,7 @@ def which_literature_site(url):
     url_components = urlparse(url)
     netloc = url_components.netloc
 
-    # for prefix in _prefixes:
-    #     if netloc.startswith(prefix):
-    #         # literature_site = netloc[len(prefix)+1:].split('.')[0]
-    #         literature_site = netloc[len(prefix)+1:]
-    #         return literature_site
-    # literature_site = netloc.split('.')[0]
     literature_site = netloc
-
-    # print(literature_site)
-
-    # if 'www' in url:
-    #     publisher = url.split('.')[1]
-    # else:
-    #     publisher = url.split('.')[0].split('//')[1]
 
     return literature_site
 
@@ -62,7 +50,7 @@ class PaperInfo(object):
 
     def get_html(self):
         # use request module to get HTML from the Webpage at self.url
-        r = requests.get(self.url)
+        r = requests.get(self.url, headers = _headers)
         html = r.text
         return html
 
@@ -106,6 +94,9 @@ class PaperInfo(object):
                 return False
 
         return True
+
+    def time_delay(self):
+        time.sleep(0.5)
 
 class PaperInfoNature(PaperInfo):
     def get_title(self):
@@ -325,7 +316,11 @@ class PaperInfoPLOS(PaperInfo):
 class PaperInfoUChicago(PaperInfo):
     def get_title(self):
         # given self.html, get the title
-        title = self.soup.find(class_='citation__title').text.strip()
+        title_tag = self.soup.find(class_='citation__title')
+        if title_tag:
+            title = title_tag.text.strip()
+        else:
+            title = ''
         return title
 
     def get_doi(self):
@@ -385,6 +380,9 @@ class PaperInfoOUP(PaperInfo):
         except:
             pdf_url = ""
         return pdf_url
+
+    def time_delay(self):
+        time.sleep(random.randint(20, 40))
 
 class PaperInfoScienceDirect(PaperInfo):
     def get_title(self):
@@ -466,6 +464,8 @@ class PaperInfoSpringer(PaperInfo):
                 pdf_tag = self.soup.find(class_='c-pdf-download u-clear-both')
                 pdf_link = pdf_tag.find('a').get('href')
         return self.pdf_link
+    def time_delay(self):
+        time.sleep(random.randint(5, 10))
 
 class PaperInfoScienceMag(PaperInfo):
     def get_title(self):
@@ -488,12 +488,14 @@ class PaperInfoScienceMag(PaperInfo):
         abstract = ''
 
         abstract_tag_1 = self.soup.find(class_='section abstract')
+        abstract_tag_2 = self.soup.find(class_='section summary')
+
         if abstract_tag_1:
             abstract = abstract_tag_1.find('p').text.strip()
 
-        abstract_tag_2 = self.soup.find(class_='section summary')
-        if abstract_tag_2:
+        elif abstract_tag_2:
             abstract = abstract_tag_2.find('p').text.strip()
+
         return abstract
 
     def get_full_doc_link(self):
@@ -550,7 +552,8 @@ paper_info_classes = {
     'journals.plos.org': PaperInfoPLOS,
     'academic.oup.com': PaperInfoOUP,
     'www.journals.uchicago.edu': PaperInfoUChicago,
-    'www.science.sciencemag.org': PaperInfoScienceMag,
+    'www.sciencedirect.com': PaperInfoScienceDirect,
+    'science.sciencemag.org': PaperInfoScienceMag,
 }
 
 

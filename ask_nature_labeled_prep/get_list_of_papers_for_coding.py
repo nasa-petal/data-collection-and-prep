@@ -1,7 +1,13 @@
+from pathlib import Path
+import argparse
+import os
+import sys
 import pprint
 
 import requests
 import pandas as pd
+
+from dotenv import load_dotenv
 
 def retrieve_airtable_data(table, api_key):
     '''
@@ -38,10 +44,16 @@ def retrieve_airtable_data(table, api_key):
 
 if __name__ == "__main__":
 
-    from dotenv import load_dotenv
-    import os
+    default_path_to_env = Path( Path.home(), '.petal_env')
 
-    load_dotenv('../.env')
+    parser = argparse.ArgumentParser(prog = sys.argv[0],
+                                     description = "get airtable with labeled papers.")
+    parser.add_argument("--env_path", help = "path to .env file containing API keys",
+                        default = default_path_to_env, type = str)
+
+    args = parser.parse_args()
+
+    load_dotenv(args.env_path)
 
     AIRTABLE_API_KEY = os.getenv("AIRTABLE_API_KEY")
 

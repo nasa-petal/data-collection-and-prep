@@ -139,7 +139,7 @@ class AskNatureLabeledEtl(object):
 
 etl = AskNatureLabeledEtl()
 
-etl.extract("../data/Colleen_and_Alex.csv")
+etl.extract("../data/Colleen_and_Alex_export_from_airtable.csv")
 
 etl.raw_data_check()
 
