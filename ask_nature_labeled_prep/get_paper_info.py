@@ -467,6 +467,40 @@ class PaperInfoSpringer(PaperInfo):
     def time_delay(self):
         time.sleep(random.randint(5, 10))
 
+class PaperInfoScienceMag(PaperInfo):
+    def get_title(self):
+        # given self.html, get the title
+        title_tag = self.soup.find(class_='highwire-cite-title')
+        if title_tag:
+            title = title_tag.text.strip()
+        else:
+            title = self.soup.find(class_='article__headline').text.strip()
+        return title
+
+    def get_doi(self):
+        # given self.html, get the doi
+        doi = 'https://doi.org/' + self.soup.find(class_='meta-line').text.strip().split("DOI: ")[1]
+        self.doi = doi
+        return doi
+
+    def get_abstract(self):
+        # given self.html, get the abstract
+        abstract = ''
+
+        abstract_tag_1 = self.soup.find(class_='section abstract')
+        abstract_tag_2 = self.soup.find(class_='section summary')
+
+        if abstract_tag_1:
+            abstract = abstract_tag_1.find('p').text.strip()
+
+        elif abstract_tag_2:
+            abstract = abstract_tag_2.find('p').text.strip()
+
+        return abstract
+
+    def get_full_doc_link(self):
+        return None
+
     # def is_open_access(self):
     #     if self.pdf_link is '':
     #         self.pdf_link = self.get_full_doc_link()
@@ -519,6 +553,7 @@ paper_info_classes = {
     'academic.oup.com': PaperInfoOUP,
     'www.journals.uchicago.edu': PaperInfoUChicago,
     'www.sciencedirect.com': PaperInfoScienceDirect,
+    'science.sciencemag.org': PaperInfoScienceMag,
 }
 
 
