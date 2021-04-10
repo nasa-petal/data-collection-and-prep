@@ -11,13 +11,6 @@ def labels_fix(labels):
     '''
     if not isinstance(labels, str):
         labels = []
-    # if isinstance(labels, str) and len(labels) > 0:
-    #     labels = labels.replace("[", "")
-    #     labels = labels.replace("]", "")
-    #     labels = labels.replace("\'", "")
-    #     labels = labels.split(', ')
-    # else:
-    #     labels = []
     return labels
 
 def abstract_fix( abstract):
@@ -42,6 +35,20 @@ def raw_data_check(df):
     print(duplicate_papers)
 
     print(df.duplicated(subset='Primary lit site', keep='first').sum())
+
+    # Look for commas in the labels
+    # Loop through all the records
+    papers_with_commas_in_labels = set()
+    for index, row in df[['Primary lit site', 'Functions Level I']].iterrows():
+        for label in row['Functions Level I']:
+            if "," in label:
+                papers_with_commas_in_labels.add(row['Primary lit site'])
+
+    if papers_with_commas_in_labels:
+        print("**** the following papers have labels with commas in them ****")
+        for paper in papers_with_commas_in_labels:
+            print(f"    {paper}")
+        print("**** *****\n")
 
 def filter_by_lit_site(df, filter_string):
     return df[df['Primary lit site'].str.contains(filter_string, case=True)]
@@ -143,17 +150,15 @@ def transformed_data_check(df):
         print(df.describe())
 
 if __name__ == "__main__":
-    # df = extract("../data/Colleen_and_Alex_export_from_airtable.csv")
     df = extract("../data/Colleen_and_Alex.csv")
 
     raw_data_check(df)
 
     # df = filter_by_lit_site(df, 'pubmed.ncbi.nlm.nih.gov')
-    df = filter_by_lit_site(df, 'springer')
+    # df = filter_by_lit_site(df, 'springer')
 
     # print("filtered data check")
     # raw_data_check(df)
-
 
     # df = filter_by_count(df, 10)
 
