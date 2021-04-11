@@ -1,3 +1,4 @@
+import ast
 import traceback
 import time
 
@@ -40,9 +41,12 @@ def raw_data_check(df):
     # Loop through all the records
     papers_with_commas_in_labels = set()
     for index, row in df[['Primary lit site', 'Functions Level I']].iterrows():
-        for label in row['Functions Level I']:
-            if "," in label:
-                papers_with_commas_in_labels.add(row['Primary lit site'])
+        if not isinstance(row['Functions Level I'],float):
+            labels_as_string = row['Functions Level I']
+            labels = ast.literal_eval(labels_as_string)
+            for label in labels:
+                if "," in label:
+                    papers_with_commas_in_labels.add(row['Primary lit site'])
 
     if papers_with_commas_in_labels:
         print("**** the following papers have labels with commas in them ****")
@@ -160,7 +164,7 @@ if __name__ == "__main__":
     # print("filtered data check")
     # raw_data_check(df)
 
-    # df = filter_by_count(df, 10)
+    df = filter_by_count(df, 10)
 
     transformed_df, status_df = transform(df)
 
