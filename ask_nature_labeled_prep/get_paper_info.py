@@ -501,6 +501,47 @@ class PaperInfoScienceMag(PaperInfo):
     def get_full_doc_link(self):
         return None
 
+class PaperInfoWiley(PaperInfo):
+    def get_title(self):
+        # given self.html, get the title
+        title = self.soup.find(class_='citation__title').text.strip()
+        return title
+
+    def get_doi(self):
+        # given self.html, get the doi
+        doi = self.soup.find(class_='epub-doi').get('href')
+        self.doi = doi
+        return doi
+
+    def get_abstract(self):
+        # given self.html, get the abstract
+        abstract = ''
+        abstract_tag_1 = self.soup.find(
+            class_='article-section__content en main')  # most common tag to find abstracts
+        abstract_tag_2 = self.soup.find(class_='graphical-abstract')  # for abstracts that also contain images
+        abstract_tag_3 = self.soup.find(class_='article-section__content fr main')  # least common tag for abstracts
+
+        if abstract_tag_1:
+            abstract_paras = abstract_tag_1.find_all('p')
+            for paragraph in abstract_paras:
+                abstract += paragraph.text.strip()
+        elif abstract_tag_2:
+            abstract = abstract_tag_2.text.strip()
+        elif abstract_tag_3:
+            abstract = abstract_tag_3.text.strip()
+
+        return abstract
+
+    def get_full_doc_link(self):
+        pdf_link = ''
+        info_tag = self.soup.find(
+            class_='doi-access-container clearfix')  # this tag can tell us if an article is open access
+        if 'Free Access' in info_tag.text.strip():
+            pdf_link = 'https://sfamjournals.onlinelibrary.wiley.com' + self.soup.find(
+                class_='coolBar__ctrl pdf-download').get('href')
+
+        return self.pdf_link
+
     # def is_open_access(self):
     #     if self.pdf_link is '':
     #         self.pdf_link = self.get_full_doc_link()

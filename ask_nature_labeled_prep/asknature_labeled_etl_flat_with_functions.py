@@ -148,7 +148,7 @@ if __name__ == "__main__":
     raw_data_check(df)
 
     # df = filter_by_lit_site(df, 'pubmed.ncbi.nlm.nih.gov')
-    df = filter_by_lit_site(df, 'sciencemag')
+    df = filter_by_lit_site(df, 'wiley')
 
     # print("filtered data check")
     # raw_data_check(df)
