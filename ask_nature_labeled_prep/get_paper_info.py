@@ -516,15 +516,17 @@ class PaperInfoWiley(PaperInfo):
     def get_abstract(self):
         # given self.html, get the abstract
         abstract = ''
-        abstract_tag_1 = self.soup.find(
-            class_='article-section__content en main')  # most common tag to find abstracts
+        abstract_tag_1 = self.soup.find(class_='article-section__content en main')  # most common tag to find abstracts
         abstract_tag_2 = self.soup.find(class_='graphical-abstract')  # for abstracts that also contain images
         abstract_tag_3 = self.soup.find(class_='article-section__content fr main')  # least common tag for abstracts
 
         if abstract_tag_1:
-            abstract_paras = abstract_tag_1.find_all('p')
-            for paragraph in abstract_paras:
-                abstract += paragraph.text.strip()
+            abstract_paras = abstract_tag_1.find_all('p')  # this abstract tag contains many useful paragraphs
+            for paragraph in abstract_paras:  # in some articles, there is a <table> tag nested within the <p> tag
+                found_table = paragraph.find('table')  # first search to see if there is a <table> tag
+                if found_table:
+                    found_table.decompose()  # if there is a table, remove the <table> tag that is nested in the <p>
+                abstract += paragraph.text.strip()  # add any other non-table paragraphs to the scraped abstract
         elif abstract_tag_2:
             abstract = abstract_tag_2.text.strip()
         elif abstract_tag_3:
