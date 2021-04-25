@@ -1,6 +1,8 @@
 import ast
 import traceback
 import time
+import argparse
+import sys
 
 import pandas as pd
 
@@ -154,22 +156,45 @@ def transformed_data_check(df):
         print(df.describe())
 
 if __name__ == "__main__":
-    df = extract("../data/Colleen_and_Alex.csv")
+    parser = argparse.ArgumentParser(prog = sys.argv[0],
+                                     description = "scape sites and generate csv with info.")
+
+    # usually "../data/Colleen_and_Alex.csv"
+    parser.add_argument('input_csv', type=str, help='input CSV file that needs additional info')
+    # usually "Colleen_and_Alex_transformed.csv"
+    parser.add_argument('output_csv', type=str, help='output CSV file')
+    # usually "Colleen_and_Alex_etl_status.csv"
+    parser.add_argument('status_csv', type=str, help='status CSV file')
+
+    parser.add_argument('--n', help='limit the number of journals to this number',
+                        default=None, type=int)
+
+    parser.add_argument('--filter', type=str,
+                        help='filter based on matching this search string in Primary Lit Site',
+                        default=None)
+
+    args = parser.parse_args()
+
+
+    df = extract(args.input_csv)
 
     raw_data_check(df)
 
     # df = filter_by_lit_site(df, 'pubmed.ncbi.nlm.nih.gov')
-    # df = filter_by_lit_site(df, 'springer')
+
+    if args.filter:
+        df = filter_by_lit_site(df, args.filter)
 
     # print("filtered data check")
     # raw_data_check(df)
 
-    df = filter_by_count(df, 10)
+    if args.n:
+        df = filter_by_count(df, args.n)
 
     transformed_df, status_df = transform(df)
 
     transformed_data_check(transformed_df)
 
-    load(transformed_df, "Colleen_and_Alex_transformed.csv")
+    load(transformed_df, args.output_csv)
 
-    save_status(status_df, "Colleen_and_Alex_etl_status.csv")
+    save_status(status_df, args.status_csv)
