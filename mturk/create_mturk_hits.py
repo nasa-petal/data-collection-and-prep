@@ -3,9 +3,6 @@
 
 import boto3
 import csv
-import xmltodict
-import json
-import pprint
 import argparse
 import sys
 
@@ -14,10 +11,14 @@ parser = argparse.ArgumentParser(prog=sys.argv[0],
 parser.add_argument("aws_profile", help="AWS Profile Name", type=str)
 parser.add_argument("papers_csv", help="CSV file with title, abstract, and URL for papers", type=str)
 parser.add_argument("hits_ids_file", help="file containing HIT IDs generated", type=str)
+parser.add_argument("--max_assignments", help="Maximum MTurk Assignments", default=1, type=int)
+parser.add_argument("--max_hits", help="Maximum HITS created", default=4, type=int)
 args = parser.parse_args()
 aws_profile = args.aws_profile
 papers_csv = args.papers_csv
 hits_ids_file = args.hits_ids_file
+max_assignments = args.max_assignments
+max_hits = args.max_hits
 
 # Create the MTurk client object used to interact with MTurk
 create_hits_in_production = False # Change this to True if publishing to production, not sandbox
@@ -51,11 +52,11 @@ question_xml = QUESTION_XML.format(html_layout)
 # MaxAssignments set to 1 here because I wanted to test this and so this way I could be the
 # #    one and only worker working on this and it would be done
 TaskAttributes = {
-    'MaxAssignments': 1,           
-    # How long the task will be available on MTurk (1 hour)     
-    'LifetimeInSeconds': 60*60,
-    # How long Workers have to complete each item (10 minutes)
-    'AssignmentDurationInSeconds': 60*10,
+    'MaxAssignments': max_assignments,
+    # How long the task will be available on MTurk (10 days)
+    'LifetimeInSeconds': 10*24*60*60,
+    # How long Workers have to complete each item (20 minutes)
+    'AssignmentDurationInSeconds': 60*20,
     # The reward you will offer Workers for each response
     'Reward': '0.00',                     
     'Title': 'Petal labeling',
@@ -70,11 +71,14 @@ hit_type_id = ''
 
 with open(hits_ids_file, 'w') as hitsfile:
     writer = csv.writer(hitsfile)
-    with open('ground_truth.csv', newline='') as csvfile:
+    with open(papers_csv, newline='') as csvfile:
         reader = csv.reader(csvfile)
         next(reader) # skip the header
+        count = 0
         for i, row in enumerate(reader):
-            title, abstract, url = row
+            if count >= max_hits: break
+            # title, abstract, url = row
+            id,title,doi,abstract,labels,url,literature_site,full_doc_link,is_open_access,use = row
             response = client.create_hit(
                 **TaskAttributes,
                 Question=question_xml.replace('${title}',title).replace('${abstract}',abstract).replace('${url}',url)
@@ -88,13 +92,12 @@ with open(hits_ids_file, 'w') as hitsfile:
                 'hit_id': hit_id,
             })
             # hitsfile.write(f"{hit_id}\n")
-            writer.writerow((hit_id,title,abstract,url))
-            if i > 0: break   # Only want to do a couple HITs for now
+            # writer.writerow((hit_id,title,abstract,url))
+            writer.writerow((hit_id,url))
+            count += 1
 
 # Print out the URL to where you can view the HITs
 print("You can view the HITs here:")
 print(mturk_environment['preview']+"?groupId={}".format(hit_type_id))
-
-
 
 
