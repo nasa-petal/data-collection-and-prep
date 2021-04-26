@@ -57,6 +57,9 @@ if __name__ == "__main__":
 
     AIRTABLE_API_KEY = os.getenv("AIRTABLE_API_KEY")
 
+    if AIRTABLE_API_KEY in None:
+        raise ValueError("AIRTABLE_API_KEY is None")
+
     table = 'Colleen%20and%20Alex'
 
     df = retrieve_airtable_data(table, AIRTABLE_API_KEY)

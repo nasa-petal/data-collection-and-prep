@@ -134,3 +134,10 @@ dmypy.json
 # misc
 .DS_Store
 .env.local
+
+# Google Drive
+mycreds.txt
+client_secrets.json
+
+# Don't want CSV files in the repo
+*.csv

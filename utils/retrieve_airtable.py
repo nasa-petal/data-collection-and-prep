@@ -49,13 +49,16 @@ if __name__ == "__main__":
     parser.add_argument("--env_path", help = "path to .env file containing API keys",
                         default = default_path_to_env, type = str)
 
+    parser.add_argument('table', type=str, help='name of Airtable to retrieve')
+
     args = parser.parse_args()
 
     load_dotenv(args.env_path)
 
+    table = args.table
+
     AIRTABLE_API_KEY = os.getenv("AIRTABLE_API_KEY")
-    table = 'Colleen%20and%20Alex'
+    # table = 'Colleen%20and%20Alex'
     df = retrieve_airtable_data(table, AIRTABLE_API_KEY)
     
-    table = table.replace('%20', '_')
-    df.to_csv('../data/%s.csv' % table)
+    df.to_csv('../data/%s.csv' % table.replace('%20', '_'))
