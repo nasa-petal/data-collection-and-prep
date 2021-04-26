@@ -175,18 +175,12 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-
     df = extract(args.input_csv)
 
     raw_data_check(df)
 
-    # df = filter_by_lit_site(df, 'pubmed.ncbi.nlm.nih.gov')
-
     if args.filter:
         df = filter_by_lit_site(df, args.filter)
-
-    # print("filtered data check")
-    # raw_data_check(df)
 
     if args.n:
         df = filter_by_count(df, args.n)
