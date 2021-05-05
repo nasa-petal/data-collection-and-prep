@@ -3,6 +3,9 @@ import traceback
 import time
 import argparse
 import sys
+from pathlib import Path
+
+from dotenv import load_dotenv
 
 import pandas as pd
 
@@ -156,6 +159,9 @@ def transformed_data_check(df):
         print(df.describe())
 
 if __name__ == "__main__":
+
+    default_path_to_env = Path( Path.home(), '.petal_env')
+
     parser = argparse.ArgumentParser(prog = sys.argv[0],
                                      description = "scape sites and generate csv with info.")
 
@@ -173,7 +179,12 @@ if __name__ == "__main__":
                         help='filter based on matching this search string in Primary Lit Site',
                         default=None)
 
+    parser.add_argument("--env_path", help = "path to .env file containing API keys",
+                        default = default_path_to_env, type = str)
+
     args = parser.parse_args()
+
+    load_dotenv(args.env_path)
 
     df = extract(args.input_csv)
 
