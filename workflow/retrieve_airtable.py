@@ -51,6 +51,8 @@ if __name__ == "__main__":
 
     parser.add_argument('table', type=str, help='name of Airtable to retrieve')
 
+    parser.add_argument('output_csv', type=str, help='output CSV file')
+
     args = parser.parse_args()
 
     load_dotenv(args.env_path)
@@ -61,4 +63,5 @@ if __name__ == "__main__":
     # table = 'Colleen%20and%20Alex'
     df = retrieve_airtable_data(table, AIRTABLE_API_KEY)
     
-    df.to_csv('../data/%s.csv' % table.replace('%20', '_'))
+    df.to_csv(args.output_csv)
+    # df.to_csv('../data/%s.csv' % table.replace('%20', '_'))

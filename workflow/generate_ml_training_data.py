@@ -1,8 +1,20 @@
 import pandas as pd
 
-import numpy as np
+import argparse
+import sys
 
-transformed_df = pd.read_csv('Colleen_and_Alex_transformed.csv')
+parser = argparse.ArgumentParser(prog=sys.argv[0],
+                                 description="generate a training data table using scraped labeled papers.")
+
+# usually "../data/Colleen_and_Alex.csv"
+parser.add_argument('input_csv', type=str, help='input CSV file containing scraped and labeled paper info')
+# usually "Colleen_and_Alex_transformed.csv"
+parser.add_argument('training_csv', type=str, help='output CSV file with training data')
+
+args = parser.parse_args()
+
+# 'Colleen_and_Alex_transformed.csv'
+transformed_df = pd.read_csv(args.input_csv)
 
 
 # 'title', 'doi', 'abstract', 'labels', 'url',
@@ -16,4 +28,5 @@ ml_df = transformed_df[['title', 'abstract', 'labels', 'doi', 'url']]
 mask = (ml_df['title'].str.len() > 0 ) & (ml_df['abstract'].str.len() > 0) & (len(ml_df['labels']) > 0)
 ml_df = ml_df.loc[mask]
 
-ml_df.to_csv('Colleen_and_Alex_training_data.csv')
+# ml_df.to_csv('Colleen_and_Alex_training_data.csv')
+ml_df.to_csv(args.training_csv)

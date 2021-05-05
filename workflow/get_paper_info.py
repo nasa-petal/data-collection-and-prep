@@ -2,7 +2,6 @@ import random
 from urllib.parse import urlparse
 import time
 
-from dotenv import load_dotenv
 import os
 
 # _prefixes = [
@@ -40,12 +39,15 @@ def which_literature_site(url):
     return literature_site
 
 class PaperInfo(object):
+
     # Abstract class for all of the
-    def __init__(self, url):
+    def __init__(self, url, scrape_page = True):
+        self.time_delay()
         self.url = url
         self.doi = None
-        self.html = self.get_html()
-        self.soup = BeautifulSoup(self.html, 'html.parser')
+        if scrape_page:
+            self.html = self.get_html()
+            self.soup = BeautifulSoup(self.html, 'html.parser')
         self.pdf_link = None
 
     def get_html(self):
@@ -127,52 +129,32 @@ class PaperInfoNature(PaperInfo):
 class PaperInfoJEB(PaperInfo):
     def get_title(self):
         # given self.html, get the title
-        title = self.soup.find('div', class_='highwire-cite-title', id='page-title').text.strip()
+        title = self.soup.find('h1', class_='wi-article-title article-title-main').text.strip()
         return title
 
     def get_doi(self):
         # given self.html, get the doi
-        doi = self.soup.find('span', class_='highwire-cite-metadata-doi highwire-cite-metadata').text
-        doi = doi[5:].strip()
+        # doi = self.soup.find('span', class_='citation-doi').text
+
+        doi = self.soup.find('div', class_='citation-doi').find('a').get('href')
+        # doi = doi[5:].strip()
         return doi
 
     def get_abstract(self):
         # given self.html, get the abstract
-        abstract = self.soup.find('p', id='p-1').text.strip()
+        abstract = self.soup.find('section', class_='abstract').text.strip()
         return abstract
 
     def get_full_doc_link(self):
         # given self.html, get the full_doc_link
-        for a in self.soup.find_all('a', href=True):
-            link = a['href']
-            if 'pdf' in link:
-                if 'jeb.biologists.org' in link:
-                    pdf_link = link
+        pdf_link = self.soup.find('a', class_='article-pdfLink')['href']
+        pdf_link = 'https://journals.biologists.com' + pdf_link
+
         self.pdf_link = pdf_link
         return pdf_link
 
-# class PaperInfoSpringer(PaperInfo):
-#     def get_title(self):
-#         # given self.html, get the title
-#         title = self.soup.find('h1', class_='c-article-title').text.strip()
-#         return title
-#
-#     def get_doi(self):
-#         # given self.html, get the doi
-#         doi = self.soup.find('span', class_='bibliographic-information__value u-overflow-wrap').text.strip()
-#         return doi
-#
-#     def get_abstract(self):
-#         # given self.html, get the abstract
-#         abstract = self.soup.find('p', class_='Para').text.strip()
-#         return abstract
-#
-#     def get_full_doc_link(self):
-#         # given self.html, get the full_doc_link
-#         pdf_link = self.url.replace('chapter','content/pdf')+'.pdf'
-#         self.pdf_link = pdf_link
-#         return pdf_link
-
+    def time_delay(self):
+        time.sleep(random.randint(20, 40))
 
 class PaperInfoRSP(PaperInfo):
     def get_title(self):
@@ -421,51 +403,59 @@ class PaperInfoScienceDirect(PaperInfo):
         return pdf_link
 
 class PaperInfoSpringer(PaperInfo):
-    def get_title(self):
-        # given self.html, get the title
-        title_tag = self.soup.find(class_='c-article-title')
-        if title_tag:  # the more commonly found tag that contains the title
-            title = title_tag.text.strip()
-        else:
-            title = self.soup.find(class_='ChapterTitle').text.strip()
-        return title
+    base_api_url = "http://api.springernature.com/meta/v2/json"
+
+    def __init__(self, url, scrape_page = True):
+        super().__init__(url, scrape_page = False)
+        self.get_doi()
+        self.query_using_api()
+        self.query_results = None
 
     def get_doi(self):
-        # given self.html, get the doi
-        doi_tag = self.soup.find(
-            class_='c-bibliographic-information__list-item c-bibliographic-information__list-item--doi')
-        if doi_tag:  # the more commonly found tag that contains the DOI
-            doi = doi_tag.find('a').get('href')
-        else:
-            doi = self.soup.find(id='doi-url').text.strip()
+        # use the URL to get the DOI. Here is an example
+        # https://link.springer.com/article/10.1007%2Fs11692-009-9069-4?LI=true
+        #
+        # https://doi.org/10.1007%2Fs11692-009-9069-4
+
+        if self.doi:
+            return self.doi
+
+        url = self.url.strip()
+        url_components = urlparse(url)
+        path = url_components.path # e.g. '/article/10.1007%2Fs002270000466'
+        doi_value = path.split('/')[-1]
+        doi = f'https://doi.org/{doi_value}'
+
         self.doi = doi
         return doi
 
-    def get_abstract(self):
-        # given self.html, get the abstract
-        # API request
-        base_url = "http://api.springernature.com/meta/v2/json"
-        q = "doi:" + '"' + self.doi.split(".org/")[1] + '"'  # quotes are needed around the DOI for some requests to work
-        load_dotenv('../.env')
+    def query_using_api(self):
+        doi_query = self.doi.split(".org/")[1]
+        query = f'doi:{doi_query}'  # quotes are needed around the DOI for some requests to work
+
         SPRINGER_API_KEY = os.getenv("SPRINGER_API_KEY")
-        params = {"q": q, "api_key": SPRINGER_API_KEY}
-        response = requests.get(base_url, params=params).json()
-        # scrape from API response
-        for i in response["records"]:
-            abstract = i["abstract"]
+        if not SPRINGER_API_KEY:
+            raise(ValueError,"SPRINGER_API_KEY not available")
+
+        params = {"q": query, "api_key": SPRINGER_API_KEY}
+        # Have to do it this way because otherwise requests encodes the colon in the query parameter
+        payload_str = "&".join("%s=%s" % (k, v) for k, v in params.items())
+        response = requests.get(self.base_api_url, params=payload_str)
+        self.query_results = response.json()
+        return
+
+    def get_title(self):
+        title = self.query_results['records'][0]['title']
+        return title
+
+    def get_abstract(self):
+        abstract = self.query_results['records'][0]['abstract']
         return abstract
 
     def get_full_doc_link(self):
-        pdf_link = ''
-        info_tag = self.soup.find(
-            class_='c-article-identifiers')  # this tag can tell us if an article is open access
-        if info_tag:  # if the tag has text
-            if "Open Access" in info_tag.text.strip():
-                pdf_tag = self.soup.find(class_='c-pdf-download u-clear-both')
-                pdf_link = pdf_tag.find('a').get('href')
-        return self.pdf_link
-    def time_delay(self):
-        time.sleep(random.randint(5, 10))
+        pdf_link = self.query_results['records'][0]['url'][0]['value']
+        return pdf_link
+
 
 class PaperInfoScienceMag(PaperInfo):
     def get_title(self):
