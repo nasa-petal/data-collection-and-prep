@@ -1,8 +1,21 @@
 import pandas as pd
+import argparse
+import sys
 
-import numpy as np
+parser = argparse.ArgumentParser(prog=sys.argv[0],
+                                 description="take the result of the individual scrape attempts and summarize the results.")
 
-status_df = pd.read_csv('Colleen_and_Alex_etl_status.csv')
+# usually "../data/Colleen_and_Alex.csv"
+parser.add_argument('status_csv', type=str, help='input CSV file containing status info')
+# usually "Colleen_and_Alex_transformed.csv"
+parser.add_argument('summary_csv', type=str, help='output CSV file with summary')
+# usually "Colleen_and_Alex_etl_status.csv"
+parser.add_argument('summary_html', type=str, help='output HTML file with summary')
+
+args = parser.parse_args()
+
+# 'Colleen_and_Alex_etl_status.csv'
+status_df = pd.read_csv(args.status_csv)
 
 literature_site_groups = status_df.groupby('literature_site')
 status_summary_df = pd.DataFrame(
@@ -68,5 +81,7 @@ status_summary_df.iat[0,status_summary_df.columns.get_loc('avg_scrape_time')] = 
 with pd.option_context('display.max_rows', None,
                        'display.max_columns', None,
                        'display.max_colwidth', 100):
-    status_summary_df.to_csv('Colleen_and_Alex_etl_summary_status.csv')
-    status_summary_df.to_html('Colleen_and_Alex_etl_summary_status.html')
+    status_summary_df.to_csv(args.summary_csv)
+    status_summary_df.to_html(args.summary_html)
+
+
