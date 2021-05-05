@@ -151,28 +151,8 @@ class PaperInfoJEB(PaperInfo):
         self.pdf_link = pdf_link
         return pdf_link
 
-# class PaperInfoSpringer(PaperInfo):
-#     def get_title(self):
-#         # given self.html, get the title
-#         title = self.soup.find('h1', class_='c-article-title').text.strip()
-#         return title
-#
-#     def get_doi(self):
-#         # given self.html, get the doi
-#         doi = self.soup.find('span', class_='bibliographic-information__value u-overflow-wrap').text.strip()
-#         return doi
-#
-#     def get_abstract(self):
-#         # given self.html, get the abstract
-#         abstract = self.soup.find('p', class_='Para').text.strip()
-#         return abstract
-#
-#     def get_full_doc_link(self):
-#         # given self.html, get the full_doc_link
-#         pdf_link = self.url.replace('chapter','content/pdf')+'.pdf'
-#         self.pdf_link = pdf_link
-#         return pdf_link
-
+    def time_delay(self):
+        time.sleep(random.randint(20, 40))
 
 class PaperInfoRSP(PaperInfo):
     def get_title(self):
@@ -464,8 +444,9 @@ class PaperInfoSpringer(PaperInfo):
                 pdf_tag = self.soup.find(class_='c-pdf-download u-clear-both')
                 pdf_link = pdf_tag.find('a').get('href')
         return self.pdf_link
+
     def time_delay(self):
-        time.sleep(random.randint(5, 10))
+        time.sleep(random.randint(20, 40))
 
 class PaperInfoScienceMag(PaperInfo):
     def get_title(self):
