@@ -38,16 +38,25 @@ client = session.client(
     endpoint_url=mturk_environment['endpoint'],
 )
 
+
+all_hits_info = client.list_hits(
+    MaxResults=100
+)
+
+print(all_hits_info)
+
 # Get the results of assigning values as part of the HITs
 questions_and_answers = []
 with open(hits_ids_file, 'r') as hitsfile:
     reader = csv.reader(hitsfile)
     for i, row in enumerate(reader):
-        hit_id, title, abstract, url = row
+        hit_id, url = row
+
+        hit_info = client.get_hit(
+            HITId=hit_id
+        )
 
         question_dict = {
-            'title': title,
-            'abstract': abstract,
             'url': url,
         }
         result = {
