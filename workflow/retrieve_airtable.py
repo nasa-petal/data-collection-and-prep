@@ -8,6 +8,21 @@ import pandas as pd
 
 from dotenv import load_dotenv
 
+from column_definitions import standard_columns, key_mapping
+
+def convert_columns(input_record):
+    # make an empty record
+    output_record = dict.fromkeys(standard_columns, '')
+    # loop through the keys and look for matches of columns names in the airtable fields
+    # if a match and that field is not empty, use that value.
+    # Otherwise, leave as empty string
+    for output_key in output_record.keys():
+        for input_key in key_mapping[output_key]:
+            if input_key in input_record and input_record[input_key]:
+                output_record[output_key] = input_record[input_key]
+                break
+    return output_record
+
 def retrieve_airtable_data(table, api_key):
     '''
     Uses airtable API key to request table data from airtable.
@@ -36,7 +51,8 @@ def retrieve_airtable_data(table, api_key):
 
     airtable_rows = []
     for record in airtable_records:
-        airtable_rows.append(record['fields'])
+        converted_columns = convert_columns(record['fields'])
+        airtable_rows.append(converted_columns)
     df = pd.DataFrame(airtable_rows)
 
     return df
