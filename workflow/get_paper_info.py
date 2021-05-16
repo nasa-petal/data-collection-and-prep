@@ -4,27 +4,12 @@ import time
 
 import os
 
-# _prefixes = [
-#     'www.journals', # order is important! Want to look for this first
-#     'www',
-#     'link',
-#     'meetings',
-#     'academic',
-#     'pubs',
-#     'journals',
-#     'epub',
-#     'connection',
-#     'pdfs'
-# ]
 import requests
 from bs4 import BeautifulSoup
 
 _headers = {
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.96 Safari/537.36"
 }
-
-
-# dx, doi, publish, books, empty!, archive, web, 2008, members
 
 def which_literature_site(url):
     # given the url, what is the literature site that it is from, e.g. 'pnas'
@@ -45,10 +30,19 @@ class PaperInfo(object):
         self.time_delay()
         self.url = url
         self.doi = None
+        self.blocked = False
         if scrape_page:
             self.html = self.get_html()
-            self.soup = BeautifulSoup(self.html, 'html.parser')
+            self.blocked = self.check_if_blocked(self.html)
+            if not self.blocked:
+                self.soup = BeautifulSoup(self.html, 'html.parser')
         self.pdf_link = None
+
+    def check_if_blocked(self, html):
+        return 'not a robot' in html
+
+    def is_blocked(self):
+        return self.blocked
 
     def get_html(self):
         # use request module to get HTML from the Webpage at self.url
@@ -408,8 +402,8 @@ class PaperInfoSpringer(PaperInfo):
     def __init__(self, url, scrape_page = True):
         super().__init__(url, scrape_page = False)
         self.get_doi()
-        self.query_using_api()
         self.query_results = None
+        self.query_using_api()
 
     def get_doi(self):
         # use the URL to get the DOI. Here is an example
@@ -534,47 +528,6 @@ class PaperInfoWiley(PaperInfo):
 
         return self.pdf_link
 
-    # def is_open_access(self):
-    #     if self.pdf_link is '':
-    #         self.pdf_link = self.get_full_doc_link()
-    #
-    #     # stream=True defer downloading the response body
-    #     #   until you access the Response.content attribute
-    #     # Doing things this way makes sure we get all the headers we need
-    #     # calling requests.head didn't always seem to get the full
-    #     #  set of headers
-    #     # See https://requests.readthedocs.io/en/master/user/advanced/ for more info
-    #     with requests.get(self.pdf_link, stream=True) as r:
-    #         if not r.ok:
-    #             return False
-    #         if r.headers['Content-Type'] != 'application/pdf':
-    #             return False
-    #         if r.headers['content-length'] == 0 :
-    #             return False
-    #
-    #     return True
-
-#
-# sciencedirect 133
-# science 69
-# onlinelibrary 63
-# oup 44
-# plos 38
-# jstor 38
-# cell 28
-# acs 26
-# tandfonline 23
-# ncbi 23
-# uchicago 21
-
-# pubmed 57   code_to_handle_success: 45, code_to_handle_failed: 12,
-# pnas 67  code_to_handle_success: 65, code_to_handle_failed: 2, no_code_to_handle: 0 --- https://www.pnas.org/content/108/24/E198.full  fails
-# nature 94 code_to_handle_success: 52, code_to_handle_failed: 42 https://www.nature.com/articles/nature03185 does not work
-# jeb 127 code_to_handle_success: 94, code_to_handle_failed: 33
-# springer 127 code_to_handle_success: 0, code_to_handle_failed: 127
-# royalsocietypublishing 80 code_to_handle_success: 78, code_to_handle_failed: 2
-
-
 paper_info_classes = {
     'www.pnas.org': PaperInfoPNAS,
     'pubmed.ncbi.nlm.nih.gov': PaperInfoPubMed,
@@ -599,11 +552,15 @@ def get_paper_info(url):
     paper_info_class = paper_info_classes[literature_site]
     paper_info_instance = paper_info_class(url)
 
-    #Retrieiving paper properties
-    title = paper_info_instance.get_title()
-    doi = paper_info_instance.get_doi()
-    abstract = paper_info_instance.get_abstract()
-    full_doc_link = paper_info_instance.get_full_doc_link()
-    is_open_access = paper_info_instance.is_open_access()
+    if paper_info_instance.is_blocked():
+        title = doi = abstract = full_doc_link = ''
+        is_open_access = False
+    else:
+        #Retrieiving paper properties
+        title = paper_info_instance.get_title()
+        doi = paper_info_instance.get_doi()
+        abstract = paper_info_instance.get_abstract()
+        full_doc_link = paper_info_instance.get_full_doc_link()
+        is_open_access = paper_info_instance.is_open_access()
 
-    return title, doi, abstract, full_doc_link, is_open_access
+    return title, doi, abstract, full_doc_link, is_open_access, paper_info_instance.is_blocked()
