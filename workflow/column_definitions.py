@@ -13,4 +13,4 @@ key_mapping = {
     "journal":["Journal"],
 }
 
-standard_columns = key_mapping.keys()
+standard_columns = list(key_mapping.keys())
