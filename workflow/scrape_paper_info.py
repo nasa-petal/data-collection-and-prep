@@ -105,22 +105,25 @@ def transform(df):
         try:
             paper_info = get_paper_info(url)
             if paper_info:
-                title, doi, abstract, full_doc_link, is_open_access = paper_info
-                get_paper_info_result = 'no_exception'
+                title, doi, abstract, full_doc_link, is_open_access, is_blocked = paper_info
+                if is_blocked:
+                    get_paper_info_result = 'blocked'
+                else:
+                    get_paper_info_result = 'no_exception'
 
-                # fix abstract
-                abstract = abstract_fix(abstract)
+                    # fix abstract
+                    abstract = abstract_fix(abstract)
 
-                transformed_df = transformed_df.append({
-                    'title': title,
-                    'doi': doi,
-                    'abstract': abstract,
-                    'labels': labels,
-                    'url': url,
-                    'literature_site': literature_site,
-                    'full_doc_link': full_doc_link,
-                    'is_open_access': is_open_access,
-                }, ignore_index=True)
+                    transformed_df = transformed_df.append({
+                        'title': title,
+                        'doi': doi,
+                        'abstract': abstract,
+                        'labels': labels,
+                        'url': url,
+                        'literature_site': literature_site,
+                        'full_doc_link': full_doc_link,
+                        'is_open_access': is_open_access,
+                    }, ignore_index=True)
             else:
                 get_paper_info_result = 'no_code'
             error_traceback = ""
@@ -210,7 +213,7 @@ def scrape_paper_info(input_record, df_status):
     try:
         paper_info = get_paper_info(url)
         if paper_info:
-            title, doi, abstract, full_doc_link, is_open_access = paper_info
+            title, doi, abstract, full_doc_link, is_open_access, is_blocked = paper_info
 
             # fix abstract
             abstract = abstract_fix(abstract)
@@ -231,8 +234,12 @@ def scrape_paper_info(input_record, df_status):
 
     scrape_time = time.time() - start_time
 
+    literature_site = which_literature_site(url)
+    input_record['literature_site'] = literature_site
+
     df_status = df_status.append({
         'url': url,
+        'literature_site': literature_site,
         'get_paper_info_result': get_paper_info_result,
         'title_len': len(title) if isinstance(title, str) else 0,
         'abstract_len': len(abstract) if isinstance(abstract, str) else 0,
@@ -251,7 +258,7 @@ def update_and_append_paper_info_table(df_input, df_paper_info_db):
     # Need to keep track of the status of each attempt to get paper info
     df_status = pd.DataFrame(columns=['url', 'get_paper_info_result',
                                       'title_len', 'abstract_len', 'doi_len',
-                                      'pdf_len', 'is_open_access',
+                                      'full_doc_link_len', 'is_open_access',
                                       'num_labels',
                                       'error_traceback', 'scrape_time'])
     df_status.astype(int)  # No floats
@@ -260,7 +267,7 @@ def update_and_append_paper_info_table(df_input, df_paper_info_db):
         # input_record = dict(zip(standard_columns, row))
         input_record = row.to_dict()
 
-        print(f"input_record['url']: {input_record['url']}")
+        print(f"{index}: input_record['url']: {input_record['url']}")
         # look in df_output for a matching doi
         #    !!!! comes back as Nan
         matching_record = df_paper_info_db.loc[df_paper_info_db['url'] == input_record['url']]
@@ -348,7 +355,7 @@ if __name__ == "__main__":
         df = filter_by_count(df, args.n)
 
     if args.new_db:
-        df_paper_info_db = pd.DataFrame(columns=standard_columns)
+        df_paper_info_db = pd.DataFrame(columns=standard_columns +['literature_site'])
     else:
         # Make a timestamped backup copy
         path = Path(args.output_csv)
