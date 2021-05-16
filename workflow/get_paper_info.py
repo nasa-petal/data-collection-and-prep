@@ -528,6 +528,32 @@ class PaperInfoWiley(PaperInfo):
 
         return self.pdf_link
 
+class PaperInfoScienceJSTOR(PaperInfo):
+    def get_title(self):
+        # given self.html, get the title
+        title = self.soup.find(class_='title-font').text.strip()
+        return title
+
+    def get_doi(self):
+        # given self.html, get the doi
+        doi = ''
+        doi_tag = self.soup.find(class_='doi')
+        if doi_tag:
+            doi = doi_tag.get('href')
+        return doi
+
+    def get_abstract(self):
+        # given self.html, get the abstract
+        abstract = self.soup.find(class_='summary-paragraph').text.strip()
+        return abstract
+
+    def get_full_doc_link(self):
+        pdf_class = self.soup.find(class_='primary-access')
+        pdf_link = 'https://jstor.org' + pdf_class['href']
+        self.pdf_link = pdf_link
+        return pdf_link
+
+
 paper_info_classes = {
     'www.pnas.org': PaperInfoPNAS,
     'pubmed.ncbi.nlm.nih.gov': PaperInfoPubMed,
@@ -540,6 +566,8 @@ paper_info_classes = {
     'www.journals.uchicago.edu': PaperInfoUChicago,
     'www.sciencedirect.com': PaperInfoScienceDirect,
     'science.sciencemag.org': PaperInfoScienceMag,
+    'onlinelibrary.wiley.com': PaperInfoWiley,
+    'www.jstor.org': PaperInfoJSTOR,
 }
 
 
