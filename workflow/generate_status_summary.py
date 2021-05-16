@@ -19,13 +19,14 @@ status_df = pd.read_csv(args.status_csv)
 
 literature_site_groups = status_df.groupby('literature_site')
 status_summary_df = pd.DataFrame(
-    columns=['literature_site', 'num_papers', 'no_exception', 'exception', 'no_code',
+    columns=['literature_site', 'num_papers', 'no_exception', 'exception', 'blocked', 'no_code',
              'title_success', 'abstract_success', 'doi_success', 'full_doc_link_success', 'is_open_access',
-             'no_labels', 'ml_ready', 'avg_scrape_time'])
+             'no_labels', 'ml_ready', 'labeling_ready', 'avg_scrape_time'])
 for literature_site, group in literature_site_groups:
     result_values = group['get_paper_info_result'].value_counts()
     no_exception = result_values.get("no_exception", 0)
     exception = result_values.get("exception", 0)
+    blocked = result_values.get("blocked", 0)
     no_code = result_values.get("no_code", 0)
     no_labels = group.query('num_labels == 0').num_labels.count()
     title_success = group.query('title_len > 0').title_len.count()
@@ -36,13 +37,16 @@ for literature_site, group in literature_site_groups:
     num_papers = group.shape[0]
     avg_scrape_time = group.scrape_time.mean()
 
-    ml_ready = group.query('title_len > 0 and abstract_len > 0 and num_labels > 0').shape[0]
+    labeling_ready = group.query('title_len > 0 and abstract_len > 0 and full_doc_link_len > 0').shape[0]
+
+    ml_ready = group.query('title_len > 0 and abstract_len > 0 and full_doc_link_len > 0 and num_labels > 0').shape[0]
 
     status_summary_df = status_summary_df.append(
         {'literature_site': literature_site,
          'num_papers': num_papers,
          'no_exception': no_exception,
          'exception': exception,
+         'blocked': blocked,
          'no_code': no_code,
          'title_success': title_success,
          'abstract_success': abstract_success,
@@ -52,6 +56,7 @@ for literature_site, group in literature_site_groups:
          'no_labels': no_labels,
          'avg_scrape_time': avg_scrape_time,
          'ml_ready': ml_ready,
+         'labeling_ready': labeling_ready,
          },
         ignore_index=True)
 

@@ -8,14 +8,26 @@ import json
 import pprint
 import argparse
 import sys
+import pandas as pd
 
 parser = argparse.ArgumentParser(prog=sys.argv[0],
                                  description="get results from a list of HITs.")
 parser.add_argument("aws_profile", help="AWS Profile Name", type=str)
+parser.add_argument("papers_labeled_file", help="file containing info about the papers labeled", type=str)
 parser.add_argument("hits_ids_file", help="file containing HIT IDs generated", type=str)
+parser.add_argument("q_and_a_file_csv", help="file containing questions and answers CSV file", type=str)
+parser.add_argument("q_and_a_file_html", help="file containing questions and answers HTML file", type=str)
 args = parser.parse_args()
 aws_profile = args.aws_profile
 hits_ids_file = args.hits_ids_file
+papers_labeled_file = args.papers_labeled_file
+q_and_a_file_csv = args.q_and_a_file_csv
+q_and_a_file_html = args.q_and_a_file_html
+
+df_papers_labeled_file = pd.read_csv(papers_labeled_file)
+
+df_papers_labeled_file.head()
+
 
 # Create the MTurk client object used to interact with MTurk
 create_hits_in_production = False # Change this to True if publishing to production, not sandbox
@@ -31,7 +43,18 @@ environments = {
   },
 }
 mturk_environment = environments["production"] if create_hits_in_production else environments["sandbox"]
+
+
+# session = boto3.Session(profile_name="056730517754_gcc-tenantMechanicalTurkFullAccess")  # This profile was created using AWS command line tools. Creating the that involved using access keys
 session = boto3.Session(profile_name=aws_profile)  # This profile was created using AWS command line tools. Creating the that involved using access keys
+
+sts = session.client(
+    service_name='sts'
+)
+
+# print(session.get_credentials().access_key)
+print(sts.get_caller_identity())
+
 client = session.client(
     service_name='mturk',
     region_name='us-east-1',
@@ -45,6 +68,7 @@ all_hits_info = client.list_hits(
 
 print(all_hits_info)
 
+
 # Get the results of assigning values as part of the HITs
 questions_and_answers = []
 with open(hits_ids_file, 'r') as hitsfile:
@@ -52,12 +76,18 @@ with open(hits_ids_file, 'r') as hitsfile:
     for i, row in enumerate(reader):
         hit_id, url = row
 
+        paper_info = df_papers_labeled_file[df_papers_labeled_file['url'] == url]
+
+
+
         hit_info = client.get_hit(
             HITId=hit_id
         )
 
         question_dict = {
             'url': url,
+            'title': paper_info.iloc[0]['title'],
+            'abstract': paper_info.iloc[0]['abstract'],
         }
         result = {
             'question': question_dict,
@@ -96,6 +126,29 @@ with open(hits_ids_file, 'r') as hitsfile:
 
 
 print(json.dumps(questions_and_answers,indent=2))
+
+df_questions_and_answers = pd.DataFrame(columns=['title', 'abstract', 'url', 'worker_id',
+                                       'labels', 'phrase', 'user_labels', 'ranking'])
+
+for q_and_a in questions_and_answers:
+    title = q_and_a['question']['title']
+    abstract = q_and_a['question']['abstract']
+    url = q_and_a['question']['url']
+    answers = q_and_a['answers']
+    for answer in answers:
+        df_questions_and_answers = df_questions_and_answers.append({
+            'title': title,
+            'abstract': abstract,
+            'url': url,
+            'worker_id': answer['worker_id'],
+            'labels': answer['category.labels'],
+            'phrase': answer['phrase'],
+            'user_labels': answer['user_labels'],
+            'ranking': answer['ranking'],
+        }, ignore_index=True)
+
+df_questions_and_answers.to_csv(q_and_a_file_csv)
+df_questions_and_answers.to_html(q_and_a_file_html)
 
 # This code just shows how to get at the results and prints them out as we learn
 # for item in results:
