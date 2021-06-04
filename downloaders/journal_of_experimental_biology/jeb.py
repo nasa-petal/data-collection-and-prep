@@ -11,6 +11,8 @@ from selenium.common.exceptions import ElementNotInteractableException
 import time
 JEB_LIMIT = 50
 
+# TODO: Add resume feature
+# TODO: Add save to json feature
 
 def jeb_search_download(query):
     driver = webdriver.Firefox()
@@ -23,7 +25,7 @@ def jeb_search_download(query):
     article_divs = [x for x in soup.find_all('div', attrs={'class': 'sri-title customLink al-title'})]
     article_links = ['https://journals.biologists.com/' + a.find(lambda tag:tag.name== 'a' and tag.has_attr('href'))['href'] for a in article_divs]
     next_link = soup.find('a', attrs={'class':'sr-nav-next al-nav-next'})
-    
+
     while (next_link is not None):
         for article_link in article_links:
             driver.get(article_link)
