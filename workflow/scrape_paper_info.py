@@ -11,31 +11,12 @@ from dotenv import load_dotenv
 
 import pandas as pd
 
-from column_definitions import standard_columns, key_mapping
+from .column_definitions import standard_columns, key_mapping
 
+from .get_paper_info import get_paper_info, which_literature_site
 
-from get_paper_info import get_paper_info, which_literature_site
+from .workflow_utilities import labels_fix, abstract_fix, extract, filter_by_lit_site, filter_by_count, save_status
 
-def labels_fix(labels):
-    '''
-    Deal with empty labels and convert them to a list if they are not
-    '''
-    if not isinstance(labels, str):
-        labels = []
-    return labels
-
-def abstract_fix( abstract):
-    '''
-    Some abstracts will come back in multiple lines. Want one line?
-    '''
-    if abstract:
-        abstract = "".join(abstract.splitlines())  # get abstract on one line
-    else:
-        abstract = ""
-    return abstract
-
-def extract(csv_file):
-    return pd.read_csv(csv_file, na_filter=False)
 
 def raw_data_check(df):
     unlabeled_papers = df[df['label_level_1'].isna()]['url']
@@ -64,11 +45,6 @@ def raw_data_check(df):
             print(f"    {paper}")
         print("**** *****\n")
 
-def filter_by_lit_site(df, filter_string):
-    return df[df['url'].str.contains(filter_string, case=True)]
-
-def filter_by_count(df, count):
-    return df.head(count)
 
 def transform(df):
     # Make an empty table for the results of the transform
@@ -152,8 +128,6 @@ def transform(df):
 def load(df, csv_file):
     df.to_csv(csv_file)
 
-def save_status(df, csv_file):
-    df.to_csv(csv_file)
 
 def transformed_data_check(df):
     print('Number of empty cells in the columns')

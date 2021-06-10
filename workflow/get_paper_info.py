@@ -65,7 +65,6 @@ class PaperInfo(object):
             return self.get_abstract_using_scraping()
 
 
-
     def check_if_blocked(self, html):
         return 'not a robot' in html
 
@@ -429,11 +428,11 @@ class PaperInfoScienceDirect(PaperInfo):
 class PaperInfoSpringer(PaperInfo):
     base_api_url = "http://api.springernature.com/meta/v2/json"
 
-    def __init__(self, url, scrape_page = True):
-        super().__init__(url, scrape_page = False)
-        self.get_doi()
-        self.query_results = None
-        self.query_using_api()
+    # def __init__(self, url, scrape_page = True):
+    #     super().__init__(url, scrape_page = False)
+    #     self.get_doi()
+    #     self.query_results = None
+    #     self.query_using_api()
 
     def get_doi(self):
         # use the URL to get the DOI. Here is an example
@@ -477,7 +476,9 @@ class PaperInfoSpringer(PaperInfo):
         return abstract
 
     def get_full_doc_link(self):
-        pdf_link = self.query_results['records'][0]['url'][0]['value']
+        # not working
+        # pdf_link = self.query_results['records'][0]['url'][0]['value']
+        pdf_link = ''
         return pdf_link
 
 
@@ -558,6 +559,15 @@ class PaperInfoWiley(PaperInfo):
 
         return self.pdf_link
 
+class PaperInfoDxDoi(PaperInfo):
+    def get_doi(self):
+        # given self.html, get the doi
+        url_components = urlparse(self.url)
+        doi = url_components.path # e.g. '/article/10.1007%2Fs002270000466'
+        self.doi = doi
+        return doi
+
+
 paper_info_classes = {
     'www.pnas.org': PaperInfoPNAS,
     'pubmed.ncbi.nlm.nih.gov': PaperInfoPubMed,
@@ -570,6 +580,8 @@ paper_info_classes = {
     'www.journals.uchicago.edu': PaperInfoUChicago,
     'www.sciencedirect.com': PaperInfoScienceDirect,
     'science.sciencemag.org': PaperInfoScienceMag,
+    'onlinelibrary.wiley.com': PaperInfoWiley,
+    'dx.doi.org': PaperInfoDxDoi,
 }
 
 
