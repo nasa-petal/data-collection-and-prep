@@ -36,7 +36,34 @@ class PaperInfo(object):
             self.blocked = self.check_if_blocked(self.html)
             if not self.blocked:
                 self.soup = BeautifulSoup(self.html, 'html.parser')
+                self.doi = self.get_doi()
+                self.use_ss_api()
         self.pdf_link = None
+
+    def use_ss_api(self):
+        # https://api.semanticscholar.org/v1/paper/10.1038/nrn3241
+        url_components = urlparse(self.doi)
+        path = url_components.path # e.g. '/article/10.1007%2Fs002270000466'
+        ss_api_url = f'https://api.semanticscholar.org/v1/paper{path}'
+        response = requests.get(ss_api_url)
+        if response.ok:
+            self.ss_api_query_results = response.json()
+        else:
+            self.ss_api_query_results = None
+
+
+    def get_title(self):
+        if self.ss_api_query_results:
+            return self.ss_api_query_results['title']
+        else:
+            return self.get_title_using_scraping()
+
+    def get_abstract(self):
+        if self.ss_api_query_results:
+            return self.ss_api_query_results['abstract']
+        else:
+            return self.get_abstract_using_scraping()
+
 
     def check_if_blocked(self, html):
         return 'not a robot' in html
@@ -50,7 +77,7 @@ class PaperInfo(object):
         html = r.text
         return html
 
-    def get_title(self):
+    def get_title_using_scraping(self):
         # given self.html, get the title
         pass
 
@@ -58,7 +85,7 @@ class PaperInfo(object):
         # given self.html, get the doi
         pass
 
-    def get_abstract(self):
+    def get_abstract_using_scraping(self):
         # given self.html, get the abstract
         pass
 
@@ -95,7 +122,7 @@ class PaperInfo(object):
         time.sleep(0.5)
 
 class PaperInfoNature(PaperInfo):
-    def get_title(self):
+    def get_title_using_scraping(self):
         # given self.html, get the title
         title = self.soup.find('h1', class_='c-article-title').text.strip()
         return title
@@ -108,7 +135,7 @@ class PaperInfoNature(PaperInfo):
                 doi = span.text.strip()
         return doi
 
-    def get_abstract(self):
+    def get_abstract_using_scraping(self):
         # given self.html, get the abstract
         abstract = self.soup.find(id='Abs1-content', class_='c-article-section__content').text.strip()
         return abstract
@@ -121,7 +148,7 @@ class PaperInfoNature(PaperInfo):
 
 
 class PaperInfoJEB(PaperInfo):
-    def get_title(self):
+    def get_title_using_scraping(self):
         # given self.html, get the title
         title = self.soup.find('h1', class_='wi-article-title article-title-main').text.strip()
         return title
@@ -134,7 +161,7 @@ class PaperInfoJEB(PaperInfo):
         # doi = doi[5:].strip()
         return doi
 
-    def get_abstract(self):
+    def get_abstract_using_scraping(self):
         # given self.html, get the abstract
         abstract = self.soup.find('section', class_='abstract').text.strip()
         return abstract
@@ -151,7 +178,7 @@ class PaperInfoJEB(PaperInfo):
         time.sleep(random.randint(20, 40))
 
 class PaperInfoRSP(PaperInfo):
-    def get_title(self):
+    def get_title_using_scraping(self):
         # given self.html, get the title
         title = self.soup.find('h1', class_='citation__title').text.strip()
         return title
@@ -161,7 +188,7 @@ class PaperInfoRSP(PaperInfo):
         doi = self.soup.find('a', class_='epub-section__doi__text').text.strip()
         return doi
 
-    def get_abstract(self):
+    def get_abstract_using_scraping(self):
         # given self.html, get the abstract
         abstract = self.soup.find('div', class_='abstractSection abstractInFull').text.strip()
         return abstract
@@ -174,7 +201,7 @@ class PaperInfoRSP(PaperInfo):
 
 
 class PaperInfoPNAS(PaperInfo):
-    def get_title(self):
+    def get_title_using_scraping(self):
         # given self.html, get the title
         title = self.soup.find('h1', class_='highwire-cite-title').text.strip()
         return title
@@ -184,7 +211,7 @@ class PaperInfoPNAS(PaperInfo):
         doi = self.soup.find('span', class_='highwire-cite-metadata-doi highwire-cite-metadata').text.strip()
         return doi
 
-    def get_abstract(self):
+    def get_abstract_using_scraping(self):
         # given self.html, get the abstract
         abstract = self.soup.find('div', class_='section abstract').find('p').text.strip()
         return abstract
@@ -200,7 +227,7 @@ class PaperInfoPNAS(PaperInfo):
 
 
 class PaperInfoPubMed(PaperInfo):
-    def get_title(self):
+    def get_title_using_scraping(self):
         title = self.soup.find(id="full-view-heading").find("h1").text.strip()
         return title
 
@@ -214,7 +241,7 @@ class PaperInfoPubMed(PaperInfo):
                 doi = a_node.text.strip()
         return doi
 
-    def get_abstract(self):
+    def get_abstract_using_scraping(self):
         # given self.html, get the abstract
         abstract = ''
         abstract_node = self.soup.find('div', class_='abstract-content selected')
@@ -254,7 +281,7 @@ class PaperInfoPubMed(PaperInfo):
         return full_doc_link
 
 class PaperInfoPLOS(PaperInfo):
-    def get_title(self):
+    def get_title_using_scraping(self):
         title_node = self.soup.find(id='artTitle')
         if title_node:
             title = title_node.text.strip()
@@ -270,7 +297,7 @@ class PaperInfoPLOS(PaperInfo):
             doi = ''
         return doi
 
-    def get_abstract(self):
+    def get_abstract_using_scraping(self):
         # given self.html, get the abstract
         abstract = ''
         abstract_node = self.soup.find(class_='abstract-content')
@@ -290,7 +317,7 @@ class PaperInfoPLOS(PaperInfo):
         return pdf_url
 
 class PaperInfoUChicago(PaperInfo):
-    def get_title(self):
+    def get_title_using_scraping(self):
         # given self.html, get the title
         title_tag = self.soup.find(class_='citation__title')
         if title_tag:
@@ -305,7 +332,7 @@ class PaperInfoUChicago(PaperInfo):
         doi = doi_class.find('a').get('href')
         return doi
 
-    def get_abstract(self):
+    def get_abstract_using_scraping(self):
         # given self.html, get the abstract
         try:
             abstract = self.soup.find(class_='abstractSection abstractInFull').text.strip()
@@ -324,7 +351,7 @@ class PaperInfoUChicago(PaperInfo):
         return pdf
 
 class PaperInfoOUP(PaperInfo):
-    def get_title(self):
+    def get_title_using_scraping(self):
         # given self.html, get the title
         title = ''
         title_node = self.soup.find(class_='wi-article-title article-title-main')
@@ -340,7 +367,7 @@ class PaperInfoOUP(PaperInfo):
             doi = doi_class.find('a').get('href')
         return doi
 
-    def get_abstract(self):
+    def get_abstract_using_scraping(self):
         # given self.html, get the abstract
         try:
             abstract_class = self.soup.find(class_='abstract')
@@ -361,7 +388,8 @@ class PaperInfoOUP(PaperInfo):
         time.sleep(random.randint(20, 40))
 
 class PaperInfoScienceDirect(PaperInfo):
-    def get_title(self):
+
+    def get_title_using_scraping(self):
         # given self.html, get the title
         title = self.soup.find(class_='title-text').text.strip()
         return title
@@ -372,7 +400,7 @@ class PaperInfoScienceDirect(PaperInfo):
         doi = doi_tag.find('a').get('href')
         return doi
 
-    def get_abstract(self):
+    def get_abstract_using_scraping(self):
         # given self.html, get the abstract
         abstract = ''
         abstract_tag = self.soup.find(class_='abstract author')
@@ -394,16 +422,17 @@ class PaperInfoScienceDirect(PaperInfo):
                 pdf_link = pdf_link.split('?via%3Dihub', 1)[0]
             pdf_link = pdf_link + '/pdfft'
         self.pdf_link = pdf_link
+        print(f"pdf_link: {pdf_link}")
         return pdf_link
 
 class PaperInfoSpringer(PaperInfo):
     base_api_url = "http://api.springernature.com/meta/v2/json"
 
-    def __init__(self, url, scrape_page = True):
-        super().__init__(url, scrape_page = False)
-        self.get_doi()
-        self.query_results = None
-        self.query_using_api()
+    # def __init__(self, url, scrape_page = True):
+    #     super().__init__(url, scrape_page = False)
+    #     self.get_doi()
+    #     self.query_results = None
+    #     self.query_using_api()
 
     def get_doi(self):
         # use the URL to get the DOI. Here is an example
@@ -438,21 +467,23 @@ class PaperInfoSpringer(PaperInfo):
         self.query_results = response.json()
         return
 
-    def get_title(self):
+    def get_title_using_scraping(self):
         title = self.query_results['records'][0]['title']
         return title
 
-    def get_abstract(self):
+    def get_abstract_using_scraping(self):
         abstract = self.query_results['records'][0]['abstract']
         return abstract
 
     def get_full_doc_link(self):
-        pdf_link = self.query_results['records'][0]['url'][0]['value']
+        # not working
+        # pdf_link = self.query_results['records'][0]['url'][0]['value']
+        pdf_link = ''
         return pdf_link
 
 
 class PaperInfoScienceMag(PaperInfo):
-    def get_title(self):
+    def get_title_using_scraping(self):
         # given self.html, get the title
         title_tag = self.soup.find(class_='highwire-cite-title')
         if title_tag:
@@ -467,7 +498,7 @@ class PaperInfoScienceMag(PaperInfo):
         self.doi = doi
         return doi
 
-    def get_abstract(self):
+    def get_abstract_using_scraping(self):
         # given self.html, get the abstract
         abstract = ''
 
@@ -486,7 +517,7 @@ class PaperInfoScienceMag(PaperInfo):
         return None
 
 class PaperInfoWiley(PaperInfo):
-    def get_title(self):
+    def get_title_using_scraping(self):
         # given self.html, get the title
         title = self.soup.find(class_='citation__title').text.strip()
         return title
@@ -497,7 +528,7 @@ class PaperInfoWiley(PaperInfo):
         self.doi = doi
         return doi
 
-    def get_abstract(self):
+    def get_abstract_using_scraping(self):
         # given self.html, get the abstract
         abstract = ''
         abstract_tag_1 = self.soup.find(class_='article-section__content en main')  # most common tag to find abstracts
@@ -527,6 +558,14 @@ class PaperInfoWiley(PaperInfo):
                 class_='coolBar__ctrl pdf-download').get('href')
 
         return self.pdf_link
+
+class PaperInfoDxDoi(PaperInfo):
+    def get_doi(self):
+        # given self.html, get the doi
+        url_components = urlparse(self.url)
+        doi = url_components.path # e.g. '/article/10.1007%2Fs002270000466'
+        self.doi = doi
+        return doi
 
 class PaperInfoScienceJSTOR(PaperInfo):
     def get_title(self):
@@ -567,6 +606,7 @@ paper_info_classes = {
     'www.sciencedirect.com': PaperInfoScienceDirect,
     'science.sciencemag.org': PaperInfoScienceMag,
     'onlinelibrary.wiley.com': PaperInfoWiley,
+    'dx.doi.org': PaperInfoDxDoi,
     'www.jstor.org': PaperInfoJSTOR,
 }
 
@@ -591,4 +631,5 @@ def get_paper_info(url):
         full_doc_link = paper_info_instance.get_full_doc_link()
         is_open_access = paper_info_instance.is_open_access()
 
+    print(f"title: {title}\ndoi: {doi}\nabstract: {abstract}")
     return title, doi, abstract, full_doc_link, is_open_access, paper_info_instance.is_blocked()

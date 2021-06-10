@@ -13,26 +13,8 @@ import pandas as pd
 parser = argparse.ArgumentParser(prog=sys.argv[0],
                                  description="get results from a list of HITs.")
 parser.add_argument("aws_profile", help="AWS Profile Name", type=str)
-parser.add_argument("papers_labeled_file", help="file containing info about the papers labeled", type=str)
-parser.add_argument("hits_ids_files", help="files containing HIT IDs generated. Comma separated if more than one", type=str)
-parser.add_argument("q_and_a_file_csv", help="file containing questions and answers CSV file", type=str)
-parser.add_argument("q_and_a_file_html", help="file containing questions and answers HTML file", type=str)
 args = parser.parse_args()
 aws_profile = args.aws_profile
-hits_ids_files = args.hits_ids_files
-if "," in hits_ids_files:
-    print("multiple!")
-    hits_ids_files = hits_ids_files.split(",")
-else:
-    hits_ids_files = [hits_ids_files,]
-papers_labeled_file = args.papers_labeled_file
-q_and_a_file_csv = args.q_and_a_file_csv
-q_and_a_file_html = args.q_and_a_file_html
-
-df_papers_labeled_file = pd.read_csv(papers_labeled_file)
-
-df_papers_labeled_file.head()
-
 
 # Create the MTurk client object used to interact with MTurk
 create_hits_in_production = False # Change this to True if publishing to production, not sandbox
@@ -66,151 +48,183 @@ client = session.client(
     endpoint_url=mturk_environment['endpoint'],
 )
 
+def get_all_hits(client):
+    initial = True
+    all_hits = []
+    while initial or ('NextToken' in all_hits_info):
+        if initial:
+            all_hits_info = client.list_hits(MaxResults=100)
+        else:
+            all_hits_info = client.list_hits(MaxResults=100, NextToken=all_hits_info['NextToken'])
+        all_hits.extend(all_hits_info['HITs'])
+        initial = False
 
-# all_hits_info = client.list_hits(
-#     MaxResults=100
-# )
-#
+    return all_hits
+
+hits = get_all_hits(client)
+
+all_hits_info = client.list_hits(
+    MaxResults=100
+)
+
+for hit in hits:
+    print(hit['HITId'], hit['MaxAssignments'], hit['NumberOfAssignmentsPending'], hit['NumberOfAssignmentsAvailable'], hit['NumberOfAssignmentsCompleted'])
+
+# Information we would be interested in
+# HITId
+# HITTypeId
+# HITGroupId
+# CreationTime
+# Title
+# Description
+# Question
+# HITStatus
+# MaxAssignments
+# Reward
+# HITReviewStatus
+# NumberOfAssignmentsPending
+# NumberOfAssignmentsAvailable
+# NumberOfAssignmentsCompleted
 # print(all_hits_info)
+# #
 #
-
-# Get the results of assigning values as part of the HITs
-questions_and_answers = []
-for hits_ids_file in hits_ids_files:
-    with open(hits_ids_file, 'r') as hitsfile:
-        reader = csv.reader(hitsfile)
-        for i, row in enumerate(reader):
-            hit_id, url = row
-
-            paper_info = df_papers_labeled_file[df_papers_labeled_file['url'] == url]
-
-
-
-            hit_info = client.get_hit(
-                HITId=hit_id
-            )
-
-            question_dict = {
-                'url': url,
-                'title': paper_info.iloc[0]['title'],
-                'abstract': paper_info.iloc[0]['abstract'],
-            }
-            result = {
-                'question': question_dict,
-                'answers': []
-            }
-            # Get a list of the Assignments that have been submitted
-            assignmentsList = client.list_assignments_for_hit(
-                HITId=hit_id,
-                AssignmentStatuses=['Submitted', 'Approved'],
-                # MaxResults=10
-            )
-            assignments = assignmentsList['Assignments']
-            for assignment in assignments:
-                # Retreive the attributes for each Assignment
-                worker_id = assignment['WorkerId']
-                assignment_id = assignment['AssignmentId']
-
-                answer_dict = {
-                    'worker_id': worker_id,
-                    'assignment_id': assignment_id,
-                    'category.labels': '',
-                    'phrase': '',
-                    'user_labels': '',
-                    'ranking': '',
-                }
-
-                answer_fields_from_mturk = xmltodict.parse(assignment['Answer'])['QuestionFormAnswers']['Answer']
-                for field in answer_fields_from_mturk:
-                    question_id = field['QuestionIdentifier']
-                    answer_text = field['FreeText']
-                    answer_dict[question_id] = answer_text
-
-                result['answers'].append(answer_dict)
-
-            questions_and_answers.append(result)
-
-
-# print(json.dumps(questions_and_answers,indent=2))
-
-df_questions_and_answers = pd.DataFrame(columns=['title', 'abstract', 'url', 'worker_id',
-                                       'labels', 'phrase', 'user_labels', 'ranking'])
-
-for q_and_a in questions_and_answers:
-    title = q_and_a['question']['title']
-    abstract = q_and_a['question']['abstract']
-    url = q_and_a['question']['url']
-    answers = q_and_a['answers']
-    for answer in answers:
-        df_questions_and_answers = df_questions_and_answers.append({
-            'title': title,
-            'abstract': abstract,
-            'url': url,
-            'worker_id': answer['worker_id'],
-            'labels': answer['category.labels'],
-            'phrase': answer['phrase'],
-            'user_labels': answer['user_labels'],
-            'ranking': answer['ranking'],
-        }, ignore_index=True)
-
-
-df_questions_and_answers = df_questions_and_answers.drop(['user_labels'], axis = 1)
-
-df_questions_and_answers = df_questions_and_answers.sort_values(by=['title'])
-
-
-def break_into_lines(series):
-    return "<pre>" + '<br/>------------<br/>'.join(series) + "</pre>"
-
-def break_into_lines_and_shorten(series):
-    s = series.str.slice(stop=30)
-    s = s.apply(lambda x: "{}{}".format(x, '...'))
-    return "<pre>" + '<br/>------------<br/>'.join(s) + "</pre>"
-
-def shorten(series):
-    return (''.join(series))[:30]
-
-d = {
-    'worker_id': break_into_lines,
-    'abstract': shorten,
-    'url': 'first',
-    'labels': break_into_lines,
-    'phrase': break_into_lines_and_shorten,
-    'ranking': break_into_lines
-}
-df_questions_and_answers = df_questions_and_answers.groupby('title', as_index=False).aggregate(d).reindex(columns=df_questions_and_answers.columns)
-
-df_questions_and_answers.to_csv(q_and_a_file_csv)
-style = '''
-<style>
-table {
-  border-collapse: collapse;
-  width: 100%;
-}
-
-th {
-  text-align: center;
-  padding: 8px;
-}
-
-td {
-  text-align: left;
-  padding: 8px;
-}
-
-tr:nth-child(even){background-color: #DDDDDD}
-
-th {
-  background-color: #AAAAAA;
-  color: white;
-}
-</style>
-'''
-
-html = """<html><head>Mechanical Turk Results</head>{1}<div>{0}</div></html>""".format(df_questions_and_answers.to_html(escape=False),style)
-
-with open(q_and_a_file_html, "w") as f:
-    f.write(html)
+# # Get the results of assigning values as part of the HITs
+# questions_and_answers = []
+# for hits_ids_file in hits_ids_files:
+#     with open(hits_ids_file, 'r') as hitsfile:
+#         reader = csv.reader(hitsfile)
+#         for i, row in enumerate(reader):
+#             hit_id, url = row
+#
+#             paper_info = df_papers_labeled_file[df_papers_labeled_file['url'] == url]
+#
+#
+#
+#             hit_info = client.get_hit(
+#                 HITId=hit_id
+#             )
+#
+#             question_dict = {
+#                 'url': url,
+#                 'title': paper_info.iloc[0]['title'],
+#                 'abstract': paper_info.iloc[0]['abstract'],
+#             }
+#             result = {
+#                 'question': question_dict,
+#                 'answers': []
+#             }
+#             # Get a list of the Assignments that have been submitted
+#             assignmentsList = client.list_assignments_for_hit(
+#                 HITId=hit_id,
+#                 AssignmentStatuses=['Submitted', 'Approved'],
+#                 # MaxResults=10
+#             )
+#             assignments = assignmentsList['Assignments']
+#             for assignment in assignments:
+#                 # Retreive the attributes for each Assignment
+#                 worker_id = assignment['WorkerId']
+#                 assignment_id = assignment['AssignmentId']
+#
+#                 answer_dict = {
+#                     'worker_id': worker_id,
+#                     'assignment_id': assignment_id,
+#                     'category.labels': '',
+#                     'phrase': '',
+#                     'user_labels': '',
+#                     'ranking': '',
+#                 }
+#
+#                 answer_fields_from_mturk = xmltodict.parse(assignment['Answer'])['QuestionFormAnswers']['Answer']
+#                 for field in answer_fields_from_mturk:
+#                     question_id = field['QuestionIdentifier']
+#                     answer_text = field['FreeText']
+#                     answer_dict[question_id] = answer_text
+#
+#                 result['answers'].append(answer_dict)
+#
+#             questions_and_answers.append(result)
+#
+#
+# # print(json.dumps(questions_and_answers,indent=2))
+#
+# df_questions_and_answers = pd.DataFrame(columns=['title', 'abstract', 'url', 'worker_id',
+#                                        'labels', 'phrase', 'user_labels', 'ranking'])
+#
+# for q_and_a in questions_and_answers:
+#     title = q_and_a['question']['title']
+#     abstract = q_and_a['question']['abstract']
+#     url = q_and_a['question']['url']
+#     answers = q_and_a['answers']
+#     for answer in answers:
+#         df_questions_and_answers = df_questions_and_answers.append({
+#             'title': title,
+#             'abstract': abstract,
+#             'url': url,
+#             'worker_id': answer['worker_id'],
+#             'labels': answer['category.labels'],
+#             'phrase': answer['phrase'],
+#             'user_labels': answer['user_labels'],
+#             'ranking': answer['ranking'],
+#         }, ignore_index=True)
+#
+#
+# df_questions_and_answers = df_questions_and_answers.drop(['user_labels'], axis = 1)
+#
+# df_questions_and_answers = df_questions_and_answers.sort_values(by=['title'])
+#
+#
+# def break_into_lines(series):
+#     return "<pre>" + '<br/>------------<br/>'.join(series) + "</pre>"
+#
+# def break_into_lines_and_shorten(series):
+#     s = series.str.slice(stop=30)
+#     s = s.apply(lambda x: "{}{}".format(x, '...'))
+#     return "<pre>" + '<br/>------------<br/>'.join(s) + "</pre>"
+#
+# def shorten(series):
+#     return (''.join(series))[:30]
+#
+# d = {
+#     'worker_id': break_into_lines,
+#     'abstract': shorten,
+#     'url': 'first',
+#     'labels': break_into_lines,
+#     'phrase': break_into_lines_and_shorten,
+#     'ranking': break_into_lines
+# }
+# df_questions_and_answers = df_questions_and_answers.groupby('title', as_index=False).aggregate(d).reindex(columns=df_questions_and_answers.columns)
+#
+# df_questions_and_answers.to_csv(q_and_a_file_csv)
+# style = '''
+# <style>
+# table {
+#   border-collapse: collapse;
+#   width: 100%;
+# }
+#
+# th {
+#   text-align: center;
+#   padding: 8px;
+# }
+#
+# td {
+#   text-align: left;
+#   padding: 8px;
+# }
+#
+# tr:nth-child(even){background-color: #DDDDDD}
+#
+# th {
+#   background-color: #AAAAAA;
+#   color: white;
+# }
+# </style>
+# '''
+#
+# html = """<html><head>Mechanical Turk Results</head>{1}<div>{0}</div></html>""".format(df_questions_and_answers.to_html(escape=False),style)
+#
+# with open(q_and_a_file_html, "w") as f:
+#     f.write(html)
 
 # df_questions_and_answers.to_html(q_and_a_file_html)
 

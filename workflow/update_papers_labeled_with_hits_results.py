@@ -11,12 +11,10 @@ import sys
 import pandas as pd
 
 parser = argparse.ArgumentParser(prog=sys.argv[0],
-                                 description="get results from a list of HITs.")
+                                 description="get results from a list of HITs and update the paper info table")
 parser.add_argument("aws_profile", help="AWS Profile Name", type=str)
 parser.add_argument("papers_labeled_file", help="file containing info about the papers labeled", type=str)
 parser.add_argument("hits_ids_files", help="files containing HIT IDs generated. Comma separated if more than one", type=str)
-parser.add_argument("q_and_a_file_csv", help="file containing questions and answers CSV file", type=str)
-parser.add_argument("q_and_a_file_html", help="file containing questions and answers HTML file", type=str)
 args = parser.parse_args()
 aws_profile = args.aws_profile
 hits_ids_files = args.hits_ids_files
@@ -26,8 +24,6 @@ if "," in hits_ids_files:
 else:
     hits_ids_files = [hits_ids_files,]
 papers_labeled_file = args.papers_labeled_file
-q_and_a_file_csv = args.q_and_a_file_csv
-q_and_a_file_html = args.q_and_a_file_html
 
 df_papers_labeled_file = pd.read_csv(papers_labeled_file)
 
@@ -53,9 +49,9 @@ mturk_environment = environments["production"] if create_hits_in_production else
 # session = boto3.Session(profile_name="056730517754_gcc-tenantMechanicalTurkFullAccess")  # This profile was created using AWS command line tools. Creating the that involved using access keys
 session = boto3.Session(profile_name=aws_profile)  # This profile was created using AWS command line tools. Creating the that involved using access keys
 
-sts = session.client(
-    service_name='sts'
-)
+# sts = session.client(
+#     service_name='sts'
+# )
 
 # print(session.get_credentials().access_key)
 # print(sts.get_caller_identity())
@@ -66,14 +62,6 @@ client = session.client(
     endpoint_url=mturk_environment['endpoint'],
 )
 
-
-# all_hits_info = client.list_hits(
-#     MaxResults=100
-# )
-#
-# print(all_hits_info)
-#
-
 # Get the results of assigning values as part of the HITs
 questions_and_answers = []
 for hits_ids_file in hits_ids_files:
@@ -81,10 +69,7 @@ for hits_ids_file in hits_ids_files:
         reader = csv.reader(hitsfile)
         for i, row in enumerate(reader):
             hit_id, url = row
-
             paper_info = df_papers_labeled_file[df_papers_labeled_file['url'] == url]
-
-
 
             hit_info = client.get_hit(
                 HITId=hit_id
@@ -127,6 +112,21 @@ for hits_ids_file in hits_ids_files:
                     answer_dict[question_id] = answer_text
 
                 result['answers'].append(answer_dict)
+
+            # How do we deal with multiple assignments?
+            # take all the labels, find which was the most popular. If a tie, use all of them
+
+            # Collect labels
+            labels_assigned = []
+            import collections
+            occurrences = collections.Counter(labels_assigned)
+
+            most_common = occurrences.most_common(1)
+            most_common_count = most_common[0][1]
+            # find all the values with that count
+            labels = [key for key, val in occurrences.items() if val == most_common_count]
+
+            paper_info.iloc[0]['labels'] = labels
 
             questions_and_answers.append(result)
 

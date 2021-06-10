@@ -9,19 +9,30 @@ import sys
 parser = argparse.ArgumentParser(prog=sys.argv[0],
                                  description="generate MTurk HITs from a CSV file.")
 parser.add_argument("aws_profile", help="AWS Profile Name", type=str)
-parser.add_argument("papers_csv", help="CSV file with title, abstract, and URL for papers", type=str)
+parser.add_argument("papers_csv", help="CSV file with title, abstract, and URL for papers",
+                    type=str)
 parser.add_argument("hits_ids_file", help="file containing HIT IDs generated", type=str)
 parser.add_argument("--max_assignments", help="Maximum MTurk Assignments", default=1, type=int)
 parser.add_argument("--max_hits", help="Maximum HITS created", default=4, type=int)
+parser.add_argument("--lifetime_in_days", help="How many days will the HITs be available",
+                    default=30, type=int)
+parser.add_argument("--assignment_duration_in_minutes",
+                    help="How many minutes does the worker have to complete the HITS",
+                    default=20, type=int)
+parser.add_argument("--environment", help="production or sandbox", default="sandbox", type=str,
+                    choices=['production', 'sandbox'])
 args = parser.parse_args()
 aws_profile = args.aws_profile
 papers_csv = args.papers_csv
 hits_ids_file = args.hits_ids_file
 max_assignments = args.max_assignments
 max_hits = args.max_hits
+lifetime_in_days = args.lifetime_in_days
+assignment_duration_in_minutes = args.assignment_duration_in_minutes
+environment = args.environment
 
 # Create the MTurk client object used to interact with MTurk
-create_hits_in_production = False # Change this to True if publishing to production, not sandbox
+# create_hits_in_production = False # Change this to True if publishing to production, not sandbox
 environments = {
   "production": {
     "endpoint": "https://mturk-requester.us-east-1.amazonaws.com",
@@ -33,7 +44,9 @@ environments = {
     "preview": "https://workersandbox.mturk.com/mturk/preview"
   },
 }
-mturk_environment = environments["production"] if create_hits_in_production else environments["sandbox"]
+# mturk_environment = environments["production"] if create_hits_in_production else environments["sandbox"]
+mturk_environment = environments[environment]
+
 session = boto3.Session(profile_name=aws_profile)  # This profile was created using AWS command line tools. Creating the that involved using access keys
 client = session.client(
     service_name='mturk',
@@ -54,9 +67,9 @@ question_xml = QUESTION_XML.format(html_layout)
 TaskAttributes = {
     'MaxAssignments': max_assignments,
     # How long the task will be available on MTurk (10 days)
-    'LifetimeInSeconds': 10*24*60*60,
+    'LifetimeInSeconds': lifetime_in_days*24*60*60,
     # How long Workers have to complete each item (20 minutes)
-    'AssignmentDurationInSeconds': 60*20,
+    'AssignmentDurationInSeconds': 60*assignment_duration_in_minutes,
     # The reward you will offer Workers for each response
     'Reward': '0.00',                     
     'Title': 'Petal labeling',
