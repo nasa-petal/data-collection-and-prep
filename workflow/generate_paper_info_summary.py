@@ -1,17 +1,23 @@
-import pandas as pd
+#!/usr/bin/env python
+# coding: utf-8
+
+"""
+Create a summary of the results in the primary CSV database
+"""
+
 import argparse
 import sys
 
+import pandas as pd
+
 parser = argparse.ArgumentParser(prog=sys.argv[0],
                                  description="Summarize the contents of the table containing all the paper info and labels.")
-
 parser.add_argument('paper_info_csv', type=str, help='input CSV file containing paper info')
 parser.add_argument('summary_csv', type=str, help='output CSV file with summary')
 parser.add_argument('summary_html', type=str, help='output HTML file with summary')
-
 args = parser.parse_args()
 
-paper_info_df = pd.read_csv(args.paper_info_csv).fillna('')
+paper_info_df = pd.read_csv(args.paper_info_csv).fillna('') # get rid of any potential NaNs
 
 literature_site_groups = paper_info_df.groupby('literature_site')
 paper_info_summary_df = pd.DataFrame(

@@ -1,20 +1,22 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+"""
+When the scrape_paper_info script runs, it writes to a status file the status of each scrape.
+This script generates a report summarizing that status report.
+"""
+
 import pandas as pd
 import argparse
 import sys
 
 parser = argparse.ArgumentParser(prog=sys.argv[0],
                                  description="take the result of the individual scrape attempts and summarize the results.")
-
-# usually "../data/Colleen_and_Alex.csv"
 parser.add_argument('status_csv', type=str, help='input CSV file containing status info')
-# usually "Colleen_and_Alex_transformed.csv"
 parser.add_argument('summary_csv', type=str, help='output CSV file with summary')
-# usually "Colleen_and_Alex_etl_status.csv"
 parser.add_argument('summary_html', type=str, help='output HTML file with summary')
-
 args = parser.parse_args()
 
-# 'Colleen_and_Alex_etl_status.csv'
 status_df = pd.read_csv(args.status_csv)
 
 literature_site_groups = status_df.groupby('literature_site')
@@ -37,8 +39,10 @@ for literature_site, group in literature_site_groups:
     num_papers = group.shape[0]
     avg_scrape_time = group.scrape_time.mean()
 
-    labeling_ready = group.query('title_len > 0 and abstract_len > 0 and full_doc_link_len > 0').shape[0]
-
+    # generate two new columns to indicate how many of the papers are:
+    #   Labeling Ready - These records lack labels but have enough information in them so that they can be labeled using MTurk or some other method
+    #   ML Ready - These records have all the information needed so that they can be used to train the model
+    labeling_ready = group.query('title_len > 0 and abstract_len > 0 and full_doc_link_len > 0 and num_labels == 0').shape[0]
     ml_ready = group.query('title_len > 0 and abstract_len > 0 and full_doc_link_len > 0 and num_labels > 0').shape[0]
 
     status_summary_df = status_summary_df.append(
@@ -69,12 +73,6 @@ avg_scrape_time_total = status_summary_df["avg_scrape_time"].mean()
 # Summary line at the top
 sums = status_summary_df.sum().rename('total')
 status_summary_df = pd.concat([pd.DataFrame([sums]), status_summary_df[:]]).reset_index(drop = True)
-
-# status_summary_df.loc[0, 'avg_scrape_time'] = avg_scrape_time_total
-
-# status_summary_df.iloc[0, status_summary_df.columns.get_loc('avg_scrape_time')] = avg_scrape_time_total
-
-
 
 # for some reason the column order gets changed
 cols_to_order = ['literature_site',]

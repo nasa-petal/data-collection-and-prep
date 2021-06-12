@@ -1,66 +1,42 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-import boto3
+"""
+Using labels from HITs, update the primary CSV database records with this information.
+
+THIS SCRIPT IS A WORK IN PROGRESS! IT DOES NOT COME CLOSE TO WORKING YET
+"""
+
 import csv
 import xmltodict
-import json
-import pprint
 import argparse
 import sys
 import pandas as pd
+
+from workflow_utilities import get_mturk_client
 
 parser = argparse.ArgumentParser(prog=sys.argv[0],
                                  description="get results from a list of HITs and update the paper info table")
 parser.add_argument("aws_profile", help="AWS Profile Name", type=str)
 parser.add_argument("papers_labeled_file", help="file containing info about the papers labeled", type=str)
 parser.add_argument("hits_ids_files", help="files containing HIT IDs generated. Comma separated if more than one", type=str)
+parser.add_argument("--environment", help="production or sandbox", default="sandbox", type=str,
+                    choices=['production', 'sandbox'])
 args = parser.parse_args()
 aws_profile = args.aws_profile
 hits_ids_files = args.hits_ids_files
 if "," in hits_ids_files:
-    print("multiple!")
     hits_ids_files = hits_ids_files.split(",")
 else:
     hits_ids_files = [hits_ids_files,]
 papers_labeled_file = args.papers_labeled_file
+environment = args.environment
 
 df_papers_labeled_file = pd.read_csv(papers_labeled_file)
 
-df_papers_labeled_file.head()
+# df_papers_labeled_file.head()
 
-
-# Create the MTurk client object used to interact with MTurk
-create_hits_in_production = False # Change this to True if publishing to production, not sandbox
-environments = {
-  "production": {
-    "endpoint": "https://mturk-requester.us-east-1.amazonaws.com",
-    "preview": "https://www.mturk.com/mturk/preview"
-  },
-  "sandbox": {
-    "endpoint": 
-          "https://mturk-requester-sandbox.us-east-1.amazonaws.com",
-    "preview": "https://workersandbox.mturk.com/mturk/preview"
-  },
-}
-mturk_environment = environments["production"] if create_hits_in_production else environments["sandbox"]
-
-
-# session = boto3.Session(profile_name="056730517754_gcc-tenantMechanicalTurkFullAccess")  # This profile was created using AWS command line tools. Creating the that involved using access keys
-session = boto3.Session(profile_name=aws_profile)  # This profile was created using AWS command line tools. Creating the that involved using access keys
-
-# sts = session.client(
-#     service_name='sts'
-# )
-
-# print(session.get_credentials().access_key)
-# print(sts.get_caller_identity())
-
-client = session.client(
-    service_name='mturk',
-    region_name='us-east-1',
-    endpoint_url=mturk_environment['endpoint'],
-)
+client, mturk_environment = get_mturk_client(environment, aws_profile)
 
 # Get the results of assigning values as part of the HITs
 questions_and_answers = []

@@ -1,14 +1,19 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-import boto3
-import csv
-import xmltodict
-import json
-import pprint
-import argparse
+"""
+Get the results from workers doing our HITs
+"""
+
 import sys
+import argparse
+import csv
+
+import boto3
+import xmltodict
 import pandas as pd
+
+from workflow_utilities import get_mturk_client
 
 parser = argparse.ArgumentParser(prog=sys.argv[0],
                                  description="get results from a list of HITs.")
@@ -17,6 +22,8 @@ parser.add_argument("papers_labeled_file", help="file containing info about the 
 parser.add_argument("hits_ids_files", help="files containing HIT IDs generated. Comma separated if more than one", type=str)
 parser.add_argument("q_and_a_file_csv", help="file containing questions and answers CSV file", type=str)
 parser.add_argument("q_and_a_file_html", help="file containing questions and answers HTML file", type=str)
+parser.add_argument("--environment", help="production or sandbox", default="sandbox", type=str,
+                    choices=['production', 'sandbox'])
 args = parser.parse_args()
 aws_profile = args.aws_profile
 hits_ids_files = args.hits_ids_files
@@ -28,63 +35,22 @@ else:
 papers_labeled_file = args.papers_labeled_file
 q_and_a_file_csv = args.q_and_a_file_csv
 q_and_a_file_html = args.q_and_a_file_html
+environment = args.environment
 
 df_papers_labeled_file = pd.read_csv(papers_labeled_file)
 
-df_papers_labeled_file.head()
+client, mturk_environment = get_mturk_client(environment, aws_profile)
 
-
-# Create the MTurk client object used to interact with MTurk
-create_hits_in_production = False # Change this to True if publishing to production, not sandbox
-environments = {
-  "production": {
-    "endpoint": "https://mturk-requester.us-east-1.amazonaws.com",
-    "preview": "https://www.mturk.com/mturk/preview"
-  },
-  "sandbox": {
-    "endpoint": 
-          "https://mturk-requester-sandbox.us-east-1.amazonaws.com",
-    "preview": "https://workersandbox.mturk.com/mturk/preview"
-  },
-}
-mturk_environment = environments["production"] if create_hits_in_production else environments["sandbox"]
-
-
-# session = boto3.Session(profile_name="056730517754_gcc-tenantMechanicalTurkFullAccess")  # This profile was created using AWS command line tools. Creating the that involved using access keys
-session = boto3.Session(profile_name=aws_profile)  # This profile was created using AWS command line tools. Creating the that involved using access keys
-
-sts = session.client(
-    service_name='sts'
-)
-
-# print(session.get_credentials().access_key)
-# print(sts.get_caller_identity())
-
-client = session.client(
-    service_name='mturk',
-    region_name='us-east-1',
-    endpoint_url=mturk_environment['endpoint'],
-)
-
-
-# all_hits_info = client.list_hits(
-#     MaxResults=100
-# )
-#
-# print(all_hits_info)
-#
-
-# Get the results of assigning values as part of the HITs
+# Get the results of assigning labels as part of the HITs
 questions_and_answers = []
 for hits_ids_file in hits_ids_files:
     with open(hits_ids_file, 'r') as hitsfile:
         reader = csv.reader(hitsfile)
         for i, row in enumerate(reader):
+            # the hits file has rows with just the HIT id and the url for the paper
             hit_id, url = row
 
             paper_info = df_papers_labeled_file[df_papers_labeled_file['url'] == url]
-
-
 
             hit_info = client.get_hit(
                 HITId=hit_id
@@ -103,7 +69,6 @@ for hits_ids_file in hits_ids_files:
             assignmentsList = client.list_assignments_for_hit(
                 HITId=hit_id,
                 AssignmentStatuses=['Submitted', 'Approved'],
-                # MaxResults=10
             )
             assignments = assignmentsList['Assignments']
             for assignment in assignments:
@@ -130,9 +95,6 @@ for hits_ids_file in hits_ids_files:
 
             questions_and_answers.append(result)
 
-
-# print(json.dumps(questions_and_answers,indent=2))
-
 df_questions_and_answers = pd.DataFrame(columns=['title', 'abstract', 'url', 'worker_id',
                                        'labels', 'phrase', 'user_labels', 'ranking'])
 
@@ -153,12 +115,12 @@ for q_and_a in questions_and_answers:
             'ranking': answer['ranking'],
         }, ignore_index=True)
 
-
+# We don't care about the user labels at this time
 df_questions_and_answers = df_questions_and_answers.drop(['user_labels'], axis = 1)
 
 df_questions_and_answers = df_questions_and_answers.sort_values(by=['title'])
 
-
+# A series of functions used with the aggregate method of pandas.
 def break_into_lines(series):
     return "<pre>" + '<br/>------------<br/>'.join(series) + "</pre>"
 
@@ -181,6 +143,8 @@ d = {
 df_questions_and_answers = df_questions_and_answers.groupby('title', as_index=False).aggregate(d).reindex(columns=df_questions_and_answers.columns)
 
 df_questions_and_answers.to_csv(q_and_a_file_csv)
+
+# Need to do a lot of semi-fancy things to get a good format for the HTML file
 style = '''
 <style>
 table {
@@ -212,7 +176,7 @@ html = """<html><head>Mechanical Turk Results</head>{1}<div>{0}</div></html>""".
 with open(q_and_a_file_html, "w") as f:
     f.write(html)
 
-# df_questions_and_answers.to_html(q_and_a_file_html)
+#### The rest of this file contains some code used for learning how to work with the API and the HITs
 
 # This code just shows how to get at the results and prints them out as we learn
 # for item in results:

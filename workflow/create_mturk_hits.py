@@ -11,6 +11,8 @@ import csv
 import argparse
 import sys
 
+from workflow_utilities import get_mturk_client
+
 parser = argparse.ArgumentParser(prog=sys.argv[0],
                                  description="generate MTurk HITs from a CSV file.")
 parser.add_argument("aws_profile", help="AWS Profile Name", type=str)
@@ -37,25 +39,7 @@ assignment_duration_in_minutes = args.assignment_duration_in_minutes
 environment = args.environment
 
 # Create the MTurk client object used to interact with MTurk
-environments = {
-  "production": {
-    "endpoint": "https://mturk-requester.us-east-1.amazonaws.com",
-    "preview": "https://www.mturk.com/mturk/preview"
-  },
-  "sandbox": {
-    "endpoint": 
-          "https://mturk-requester-sandbox.us-east-1.amazonaws.com",
-    "preview": "https://workersandbox.mturk.com/mturk/preview"
-  },
-}
-mturk_environment = environments[environment]
-
-session = boto3.Session(profile_name=aws_profile)  # This profile was created using AWS command line tools. Creating the that involved using access keys
-client = session.client(
-    service_name='mturk',
-    region_name='us-east-1',
-    endpoint_url=mturk_environment['endpoint'],
-)
+client, mturk_environment = get_mturk_client(environment, aws_profile)
 
 # The file mturk_template.html has the template for the HITs
 html_layout = open('./mturk_template.html', 'r').read()
@@ -65,8 +49,6 @@ QUESTION_XML = """<HTMLQuestion xmlns="http://mechanicalturk.amazonaws.com/AWSMe
         </HTMLQuestion>"""
 question_xml = QUESTION_XML.format(html_layout)
 
-# MaxAssignments set to 1 here because I wanted to test this and so this way I could be the
-# #    one and only worker working on this and it would be done
 TaskAttributes = {
     'MaxAssignments': max_assignments,
     # How long the task will be available on MTurk (10 days)
@@ -80,8 +62,7 @@ TaskAttributes = {
     'Description': 'Label the paper.'
 }
 
-# Loop over the papers
-# Read the CSV file from the ground truth AirTable. The path to this needs to be adjusted as needed
+# Loop over the papers in the CSV file
 results = []
 hit_type_id = ''
 
@@ -93,7 +74,6 @@ with open(hits_ids_file, 'w') as hitsfile:
         count = 0
         for i, row in enumerate(reader):
             if count >= max_hits: break
-            # title, abstract, url = row
             id,title,doi,abstract,labels,url,literature_site,full_doc_link,is_open_access,use = row
             response = client.create_hit(
                 **TaskAttributes,
@@ -107,8 +87,6 @@ with open(hits_ids_file, 'w') as hitsfile:
                 'url': url,
                 'hit_id': hit_id,
             })
-            # hitsfile.write(f"{hit_id}\n")
-            # writer.writerow((hit_id,title,abstract,url))
             writer.writerow((hit_id,url))
             count += 1
 
