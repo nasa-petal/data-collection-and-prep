@@ -1,4 +1,8 @@
-import ast
+#!/usr/bin/env python
+# coding: utf-8
+
+"""
+"""
 import traceback
 import time
 import argparse
@@ -15,65 +19,8 @@ from column_definitions import standard_columns, key_mapping
 
 from get_paper_info import get_paper_info, which_literature_site
 
-from workflow_utilities import labels_fix, abstract_fix, extract, filter_by_lit_site, filter_by_count, save_status
+from workflow_utilities import labels_fix, abstract_fix, extract, filter_by_lit_site, filter_by_count, save_status, scrape_paper_info
 
-def scrape_paper_info(input_record, df_status):
-    url = input_record['url']
-    print(f"url: {url}")
-
-    start_time = time.time()
-
-    # fix labels
-    input_record['label_level_1'] = labels_fix(input_record['label_level_1'])
-    input_record['label_level_2'] = labels_fix(input_record['label_level_2'])
-    input_record['label_level_3'] = labels_fix(input_record['label_level_3'])
-
-    title = doi = abstract = full_doc_link = ''
-    is_open_access = False
-
-    try:
-        paper_info = get_paper_info(url)
-        if paper_info:
-            title, doi, abstract, full_doc_link, is_open_access, is_blocked = paper_info
-
-            # fix abstract
-            abstract = abstract_fix(abstract)
-
-            get_paper_info_result = 'no_exception'
-
-            input_record['title'] = title
-            input_record['doi'] = doi
-            input_record['abstract'] = abstract
-            input_record['full_doc_link'] = full_doc_link
-            input_record['is_open_access'] = is_open_access
-        else:
-            get_paper_info_result = 'no_code'
-        error_traceback = ""
-    except Exception as err:
-        get_paper_info_result = 'exception'
-        error_traceback = traceback.format_exc()
-
-    scrape_time = time.time() - start_time
-
-    literature_site = which_literature_site(url)
-    input_record['literature_site'] = literature_site
-
-    df_status = df_status.append({
-        'url': url,
-        'literature_site': literature_site,
-        'get_paper_info_result': get_paper_info_result,
-        'title_len': len(title) if isinstance(title, str) else 0,
-        'abstract_len': len(abstract) if isinstance(abstract, str) else 0,
-        'doi_len': len(doi) if isinstance(doi, str) else 0,
-        'full_doc_link_len': len(full_doc_link) if isinstance(full_doc_link, str) else 0,
-        'is_open_access': is_open_access,
-        # 'num_labels': len(input_record['label_level_1']),
-        'num_labels': len(input_record['label_level_1'].split(',')),
-        'error_traceback': error_traceback,
-        'scrape_time': scrape_time,
-    }, ignore_index=True)
-
-    return input_record, df_status
 
 def update_paper_info_db(df_paper_info_db,n,filter):
     # Need to keep track of the status of each attempt to get paper info
@@ -90,7 +37,6 @@ def update_paper_info_db(df_paper_info_db,n,filter):
             continue
         if n and i >= n:
             break
-        # input_record = dict(zip(standard_columns, row))
         input_record = row.to_dict()
         print(f"{index}: input_record['url']: {input_record['url']}")
 
@@ -130,37 +76,21 @@ parser = argparse.ArgumentParser(prog = sys.argv[0],
 
 parser.add_argument('paper_info_csv', type=str, help='main paper info CSV file to be updated')
 parser.add_argument('status_csv', type=str, help='status CSV file')
-
 parser.add_argument('-n', help='limit the number of journals to this number',
                     default=None, type=int)
-
 parser.add_argument('--filter', type=str,
                     help='filter based on matching this search string in Primary Lit Site',
                     default=None)
-
 parser.add_argument("--env_path", help = "path to .env file containing API keys",
                     default = default_path_to_env, type = str)
-
 args = parser.parse_args()
 
 load_dotenv(args.env_path)
 
 df_paper_info_db = pd.read_csv(args.paper_info_csv)
 
-# raw_data_check(df)
-
-# if args.filter:
-#     df_paper_info_db = filter_by_lit_site(df_paper_info_db, args.filter)
-#
-# # # Only scrape what needs to be scraped. First see what is in the output csv
-# # df = filter_based_on_what_already_has_been_done(df, args.output_csv)
-#
-# if args.n:
-#     df_paper_info_db = filter_by_count(df_paper_info_db, args.n)
-
 # Make a timestamped backup copy
 path = Path(args.paper_info_csv)
-
 mtime = datetime.datetime.fromtimestamp(path.stat().st_mtime)
 s = mtime.strftime('%Y%m%d-%H-%M-%S')
 p = str(path.with_suffix('')) + '_' + s + path.suffix

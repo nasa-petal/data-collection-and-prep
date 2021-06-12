@@ -1,47 +1,30 @@
-# crowdsourcing_papers
-Starting with a list of URLs of papers that can be used for crowdsourcing, create a CSV file with the URL, DOI of the paper, Title, Abstract, and if the paper is open access.
+# Overview
 
-Outline
-- Export CSV from Airtable
-- Extract URLs from CSV
-- Get HTML of the Webpage at the URL
-- Extract from the HTML ( the code for each these depends on which journal or source )
-  - Title
-  - DOI
-  - Abstract
-  - Link to the full document
-  - Check to see if the full document is open access
-- Put all of this info for each paper into a new CSV that will be used for MTurk
+This directory contains scripts, notebooks, data, and docs used for collecting data about papers
+so that a machine learning model can be created to label papers with biomimicry functions.
 
-## Usage
+The most important folder is the `workflow` folder.
 
-`python prepare_mturk_csv.py airtable_papers.csv output.csv`
+## Directory descriptions
 
+Here are some brief explanations of what the folders contain.
 
-## File Descriptions
+- **data**  
+Contains a variety of data files generated as a result of running the scripts. It includes the "primary CSV database".
+- **docs**  
+Legacy files. Not used currently
+- **downloaders**
+Code to do downloading of information from journal paper sites. Code not used at the moment
+- **notebooks**  
+Some Jupyter notebooks used for exploring doing some data collection and transformations
+- **testing_ideas**  
+A collection of folders with scripts written to test out ideas for code that can be used for this workflow
+- **tests**  
+Test code. Not maintained. Many more tests need to be written
+- **utils**  
+A collection of scripts that can be used for small tasks
+- **workflow**  
+The most important code in this repo lives in this folder. There are many scripts used to generate the data
+for the machine learning training and also some scripts to generate reports about the process. See the 
+README file in the directory for more information
 
-`get_doi.py` Script to pull DOI for any journal website. Includes parsing DOI from the link or from the text.
-   - Example: `python get_doi.py 'https://pubmed.ncbi.nlm.nih.gov/19113150/'`
-   - Returns: 10.1103/physreve.78.051902
-
-`get_paper_info.py` Pulls Title, DOI, Abstract, Full Document Link, and whether if its Open Access from various journal sites. Instantiate an object of the correct journal class, e.g. for PubMed articles, type in 'pubmed' to create a `PaperInfoPubMed()` class.
-  - Title - `.get_title()`
-  - DOI - `.get_doi()`
-  - Abstract - `.get_abstract()`
-  - Full Document Link - `.get_full_doc_link()`
-  - Open Accesss? - `.is_open_access()`
-
-## PubMed Scraper
-
-To scrape from PubMed specifically, instantiate a `PaperInfoPubmed()` class. From there, you have access to 
-  - Title - `.get_title()`
-  - DOI - `.get_doi()`
-  - Abstract - `.get_abstract()`
-  - Similar Articles - `.get_similar_articles()`
-
-
-## Tests
-
-`test_get_doi.py` - Tests `get_doi.py` to ensure correct DOIs are found.
-
-`test_get_paper_info.py` - Tests `get_paper_info.py` to ensure correct titles are found.

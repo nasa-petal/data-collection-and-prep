@@ -1,3 +1,10 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+"""
+Given the name of a table in Alex's Airtable, download the information to a CSV file.
+"""
+
 from pathlib import Path
 import argparse
 import os
@@ -30,7 +37,6 @@ def retrieve_airtable_data(table, api_key):
     Parameters
     table : string name of the table
     '''
-    # api_key = 'XXXXX'
     headers = {
         "Authorization": "Bearer %s" % api_key,
     }
@@ -56,7 +62,7 @@ def retrieve_airtable_data(table, api_key):
     df = pd.DataFrame(airtable_rows)
 
     return df
-#
+
 if __name__ == "__main__":
     default_path_to_env = Path( Path.home(), '.petal_env')
 
@@ -64,11 +70,8 @@ if __name__ == "__main__":
                                      description = "get airtable with labeled papers.")
     parser.add_argument("--env_path", help = "path to .env file containing API keys",
                         default = default_path_to_env, type = str)
-
     parser.add_argument('table', type=str, help='name of Airtable to retrieve')
-
     parser.add_argument('output_csv', type=str, help='output CSV file')
-
     args = parser.parse_args()
 
     load_dotenv(args.env_path)
@@ -76,8 +79,7 @@ if __name__ == "__main__":
     table = args.table
 
     AIRTABLE_API_KEY = os.getenv("AIRTABLE_API_KEY")
-    # table = 'Colleen%20and%20Alex'
+    # e.g. 'Colleen%20and%20Alex'
     df = retrieve_airtable_data(table, AIRTABLE_API_KEY)
     
     df.to_csv(args.output_csv)
-    # df.to_csv('../data/%s.csv' % table.replace('%20', '_'))
