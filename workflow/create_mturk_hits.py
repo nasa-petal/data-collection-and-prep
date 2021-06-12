@@ -1,6 +1,11 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+"""
+Given a CSV file with information about a paper, generate HITs on
+MTurk using their API.
+"""
+
 import boto3
 import csv
 import argparse
@@ -32,7 +37,6 @@ assignment_duration_in_minutes = args.assignment_duration_in_minutes
 environment = args.environment
 
 # Create the MTurk client object used to interact with MTurk
-# create_hits_in_production = False # Change this to True if publishing to production, not sandbox
 environments = {
   "production": {
     "endpoint": "https://mturk-requester.us-east-1.amazonaws.com",
@@ -44,7 +48,6 @@ environments = {
     "preview": "https://workersandbox.mturk.com/mturk/preview"
   },
 }
-# mturk_environment = environments["production"] if create_hits_in_production else environments["sandbox"]
 mturk_environment = environments[environment]
 
 session = boto3.Session(profile_name=aws_profile)  # This profile was created using AWS command line tools. Creating the that involved using access keys

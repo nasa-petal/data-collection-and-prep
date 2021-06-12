@@ -1,5 +1,6 @@
-# Given the key, which contains the output fields/columns, list the
-# equivalent fields in the input tables
+"""
+Defines the columns used in this workflow
+"""
 key_mapping = {
     "doi": ["DOI"],
     "url": ["Journal URL", "Primary lit site"],

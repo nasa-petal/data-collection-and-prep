@@ -1,16 +1,28 @@
 # Data Collection Workflow Files
 
 This folder contains the code used to collect data via Web scraping, APIs, and MTurk. This data is used to 
-train the machine learning model. 
+train the machine learning model.
+
+The entire workflow revolves around a single CSV file which is the "primary CSV database". It contains these 
+columns:
+
+- doi
+- url
+- title
+- abstract
+- full_doc_link
+- is_open_access
+- label_level_1
+- label_level_2
+- label_level_3
+- journal
+- literature_site (ignore this for now. It might be removed if not used)
+
+Each row represents one paper.
 
 ## Code file descriptions
 
-First Term
-: This is the definition of the first term.
-
-Second Term
-: This is one definition of the second term.
-: This is another definition of the second term.
+Here are some brief explanations of what all the scripts do.
 
 - **column_definitions.py**  
 Contains the list of columns/fields in our resulting CSV "database"
