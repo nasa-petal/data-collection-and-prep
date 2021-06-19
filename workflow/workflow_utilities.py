@@ -112,7 +112,7 @@ def scrape_paper_info(input_record, df_status):
         'doi_len': len(doi) if isinstance(doi, str) else 0,
         'full_doc_link_len': len(full_doc_link) if isinstance(full_doc_link, str) else 0,
         'is_open_access': is_open_access,
-        'num_labels': len(input_record['label_level_1']),
+        'num_labels': len(input_record['label_level_1'].split(',')),
         'error_traceback': error_traceback,
         'scrape_time': scrape_time,
     }, ignore_index=True)
