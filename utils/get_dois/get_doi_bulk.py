@@ -65,7 +65,7 @@ def pull_doi(url):
         
         except Exception as error:
             # Log errors
-            with open("error_logs", "a") as error_log:
+            with open("error_logs.txt", "a") as error_log:
                 error_log.write(datetime.datetime.now().strftime(r"%Y/%m/%d @ %H:%M:%S"))
                 error_log.write("\n")
                 error_log.write("URL: {}\n".format(url))

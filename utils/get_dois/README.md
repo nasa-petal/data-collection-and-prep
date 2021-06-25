@@ -8,10 +8,10 @@ Both of these scripts take the URL of a digital publication and return the DOI o
 ### get_doi
 The __get_doi__ script takes a single URL and returns a single DOI.
 
-### get_dois
-The __get_dois__ script ingests a text file of URLS separated by newline characters and returns:
+### get_doi_bulk
+The __get_doi_bulk___ script ingests a text file of URLS separated by newline characters and returns:
 <ul>
-<li>A text file containing dois or "error" texts separated by newline characters.</li>
+<li>A text file containing DOIs or "error" texts separated by newline characters.</li>
 <li>An error log containing a date stamp, the faulty URL and the type of error thrown.</li>
 </ul>
 
@@ -23,5 +23,5 @@ Both scripts are run by starting them with the "python" command (ex. python exam
 ### get_doi
 <p>The __get_doi__ script requires a single argument (url) which is the URL of the digital publication.</p>
 
-### get_dois
-<p>The __get_dois__ script accepts two arguments, the first being "-p, --path", which is the path + file_name and extension of the text file containing URLs. The second argument is "-o, --overwrite", which dictates whether or not to overwrite the error_logs file if it already exists.</p>
+### get_doi_bulk
+<p>The __get_doi_bulk___ script accepts two arguments, the first being "-p, --path", which is the path + file_name and extension of the text file containing URLs. The second argument is "-o, --overwrite", which dictates whether or not to overwrite the error_logs file if it already exists.</p>
