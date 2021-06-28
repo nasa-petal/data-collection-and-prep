@@ -1,4 +1,0 @@
-2021/06/28 @ 12:25:36
-URL: https://www.jstor.org/stable/1565146?origin=crossref&seq=1
-list index out of range
-
