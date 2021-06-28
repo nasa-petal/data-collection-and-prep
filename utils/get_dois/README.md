@@ -24,4 +24,4 @@ Both scripts are run by starting them with the "python" command (ex. python exam
 <p>The __get_doi__ script requires a single argument (url) which is the URL of the digital publication.</p>
 
 ### get_doi_bulk
-<p>The __get_doi_bulk___ script accepts two arguments, the first being "-p, --path", which is the path + file_name and extension of the text file containing URLs. The second argument is "-o, --overwrite", which dictates whether or not to overwrite the error_logs file if it already exists.</p>
+<p>The __get_doi_bulk___ script requires one argument and accepts another optional argument. The required argument is "path", which is the path + file_name and extension of the text file containing URLs. The optional argument is "-o, --overwrite", which dictates whether or not to overwrite the error_logs file if it already exists.</p>
