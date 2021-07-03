@@ -141,3 +141,8 @@ client_secrets.json
 
 # Don't want CSV files in the repo
 *.csv
+
+# DOI Results
+utils/get_dois/error_logs.txt
+utils/get_dois/urls.txt
+utils/get_dois/new_dois.txt
