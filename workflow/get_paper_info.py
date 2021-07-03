@@ -10,6 +10,8 @@ import os
 import requests
 from bs4 import BeautifulSoup
 
+_REQUESTS_TIMEOUT = 3.0
+
 _headers = {
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.96 Safari/537.36"
 }
@@ -38,13 +40,16 @@ class PaperInfo(object):
                 self.soup = BeautifulSoup(self.html, 'html.parser')
                 self.doi = self.get_doi()
                 self.use_ss_api()
+        else: # get DOI from url and then use site API, like Springer
+            self.doi = self.get_doi()
+            self.query_using_api()
         self.pdf_link = None
 
     def use_ss_api(self):
         url_components = urlparse(self.doi)
         path = url_components.path # e.g. '/article/10.1007%2Fs002270000466'
         ss_api_url = f'https://api.semanticscholar.org/v1/paper{path}'
-        response = requests.get(ss_api_url)
+        response = requests.get(ss_api_url, timeout=_REQUESTS_TIMEOUT)
         if response.ok:
             self.ss_api_query_results = response.json()
         else:
@@ -70,7 +75,7 @@ class PaperInfo(object):
 
     def get_html(self):
         # use request module to get HTML from the Webpage at self.url
-        r = requests.get(self.url, headers = _headers)
+        r = requests.get(self.url, headers = _headers, timeout=_REQUESTS_TIMEOUT)
         html = r.text
         return html
 
@@ -103,7 +108,7 @@ class PaperInfo(object):
         # calling requests.head didn't always seem to get the full
         #  set of headers
         # See https://requests.readthedocs.io/en/master/user/advanced/ for more info
-        with requests.get(self.pdf_link, headers = _headers, stream=True) as r:
+        with requests.get(self.pdf_link, headers = _headers, stream=True, timeout=_REQUESTS_TIMEOUT) as r:
             if not r.ok:
                 return False
             content_type = r.headers['Content-Type']
@@ -137,7 +142,6 @@ class PaperInfoNature(PaperInfo):
         pdf_link = self.url + '.pdf'
         self.pdf_link = pdf_link
         return pdf_link
-
 
 class PaperInfoJEB(PaperInfo):
     def get_title_using_scraping(self):
@@ -179,7 +183,6 @@ class PaperInfoRSP(PaperInfo):
         self.pdf_link = pdf_link
         return pdf_link
 
-
 class PaperInfoPNAS(PaperInfo):
     def get_title_using_scraping(self):
         title = self.soup.find('h1', class_='highwire-cite-title').text.strip()
@@ -200,7 +203,6 @@ class PaperInfoPNAS(PaperInfo):
             pdf_link = self.url + '.full.pdf'
         self.pdf_link = pdf_link
         return pdf_link
-
 
 class PaperInfoPubMed(PaperInfo):
     def get_title_using_scraping(self):
@@ -242,7 +244,7 @@ class PaperInfoPubMed(PaperInfo):
         full_text_node = self.soup.find(class_='full-text-links-list')
         if full_text_node:
             full_doc_pre_link = full_text_node.find('a').get('href')
-            r = requests.get(full_doc_pre_link, headers= _headers, allow_redirects=True)
+            r = requests.get(full_doc_pre_link, headers= _headers, allow_redirects=True, timeout=_REQUESTS_TIMEOUT)
             if r.ok:
                 soup = BeautifulSoup(r.text, 'html.parser')
                 full_text_node = soup.find(class_='pdf-download')
@@ -392,53 +394,61 @@ class PaperInfoScienceDirect(PaperInfo):
 class PaperInfoSpringer(PaperInfo):
     base_api_url = "http://api.springernature.com/meta/v2/json"
 
-    def get_doi(self):
-        # use the URL to get the DOI. Here is an example
-        # https://link.springer.com/article/10.1007%2Fs11692-009-9069-4?LI=true
-        #
-        # https://doi.org/10.1007%2Fs11692-009-9069-4
+    def __init__(self, url):
+        super().__init__(url, scrape_page=False)
 
+    def get_doi(self):
+        # use the URL to get the DOI. Ex,
+        # https://link.springer.com/article/10.1007%2Fs11692-009-9069-4?LI=true
+        # https://doi.org/10.1007%2Fs11692-009-9069-4
         if self.doi:
             return self.doi
 
-        url = self.url.strip()
-        url_components = urlparse(url)
-        path = url_components.path # e.g. '/article/10.1007%2Fs002270000466'
-        doi_value = path.split('/')[-1]
-        doi = f'https://doi.org/{doi_value}'
+        doi = 'https://doi.org/'  # base of DOI
+        doi += self.url.split('chapter/')[-1] if 'chapter' in self.url else \
+        self.url.split('article/')[-1]
+
+        # fixing up some parts of the DOI url
+        if 'LI=true' in doi:
+            doi = doi.split('?LI=true')[0]
+
+        elif '%28' in doi:
+            doi = doi.replace('%2F', '/').replace('%28', '(').replace('%29', ')')
+
+        elif '#' in doi:
+            doi = doi.split('#')[0]
 
         self.doi = doi
         return doi
 
     def query_using_api(self):
-        doi_query = self.doi.split(".org/")[1]
-        query = f'doi:{doi_query}'  # quotes are needed around the DOI for some requests to work
+        doi_query = self.doi.split('.org/')[1]
+        query = f'doi:"{doi_query}"'  # quotes are needed around the DOI for some requests to work
 
         SPRINGER_API_KEY = os.getenv("SPRINGER_API_KEY")
         if not SPRINGER_API_KEY:
-            raise(ValueError,"SPRINGER_API_KEY not available")
+            raise (ValueError, "SPRINGER_API_KEY not available")
 
         params = {"q": query, "api_key": SPRINGER_API_KEY}
         # Have to do it this way because otherwise requests encodes the colon in the query parameter
         payload_str = "&".join("%s=%s" % (k, v) for k, v in params.items())
         response = requests.get(self.base_api_url, params=payload_str)
+
         self.query_results = response.json()
         return
 
-    def get_title_using_scraping(self):
+    def get_title(self):
         title = self.query_results['records'][0]['title']
         return title
 
-    def get_abstract_using_scraping(self):
+    def get_abstract(self):
         abstract = self.query_results['records'][0]['abstract']
         return abstract
 
     def get_full_doc_link(self):
-        # not working
-        # pdf_link = self.query_results['records'][0]['url'][0]['value']
+        # some links direct to PDF, others direct to original URL
         pdf_link = ''
         return pdf_link
-
 
 class PaperInfoScienceMag(PaperInfo):
     def get_title_using_scraping(self):
@@ -540,7 +550,6 @@ class PaperInfoScienceJSTOR(PaperInfo):
         self.pdf_link = pdf_link
         return pdf_link
 
-
 paper_info_classes = {
     'www.pnas.org': PaperInfoPNAS,
     'pubmed.ncbi.nlm.nih.gov': PaperInfoPubMed,
@@ -557,7 +566,6 @@ paper_info_classes = {
     'dx.doi.org': PaperInfoDxDoi,
     'www.jstor.org': PaperInfoScienceJSTOR,
 }
-
 
 def get_paper_info(url):
     # Determine the literature site name, and create corresponding object name

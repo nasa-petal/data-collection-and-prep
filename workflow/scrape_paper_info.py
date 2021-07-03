@@ -16,6 +16,7 @@ import sys
 import datetime
 from pathlib import Path
 import shutil
+import os
 
 from dotenv import load_dotenv
 import pandas as pd
@@ -150,7 +151,7 @@ def raw_data_check(df_raw):
 #         print(df.describe())
 
 
-def update_and_append_paper_info_table(df_input, df_paper_info_db):
+def update_and_append_paper_info_table(df_input, df_paper_info_db, output_csv, status_csv):
 
     # Need to keep track of the status of each attempt to get paper info
     df_status = pd.DataFrame(columns=['url', 'get_paper_info_result',
@@ -199,6 +200,9 @@ def update_and_append_paper_info_table(df_input, df_paper_info_db):
             print("new url")
             input_record, df_status = scrape_paper_info(input_record, df_status)
             df_paper_info_db = df_paper_info_db.append(input_record, ignore_index=True)
+
+        df_paper_info_db.to_csv(output_csv, index=False)
+        save_status(df_status, status_csv)
 
     return df_paper_info_db, df_status
 
@@ -257,8 +261,8 @@ if __name__ == "__main__":
     df_paper_info_db = df_paper_info_db.fillna("")
 
     # Update and append paper info table
-    df_paper_info_db, df_status = update_and_append_paper_info_table(df, df_paper_info_db)
+    df_paper_info_db, df_status = update_and_append_paper_info_table(df, df_paper_info_db, args.output_csv, args.status_csv)
 
-    df_paper_info_db.to_csv(args.output_csv, index=False)
+    # df_paper_info_db.to_csv(args.output_csv, index=False)
 
-    save_status(df_status, args.status_csv)
+    # save_status(df_status, args.status_csv)
