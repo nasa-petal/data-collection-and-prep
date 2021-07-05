@@ -13,12 +13,13 @@ Here are some brief explanations of what the folders contain.
 Contains a variety of data files generated as a result of running the scripts. It includes the "primary CSV database".
 - **docs**  
 Legacy files. Not used currently
-- **downloaders**
+- **downloaders**  
 Code to do downloading of information from journal paper sites. Code not used at the moment
 - **notebooks**  
 Some Jupyter notebooks used for exploring doing some data collection and transformations
 - **testing_ideas**  
-A collection of folders with scripts written to test out ideas for code that can be used for this workflow
+A collection of folders with scripts written to test out ideas for code that can be used for the data
+ collection workflow
 - **tests**  
 Test code. Not maintained. Many more tests need to be written
 - **utils**  
