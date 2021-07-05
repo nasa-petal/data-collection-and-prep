@@ -16,6 +16,7 @@ import pandas as pd
 from dotenv import load_dotenv
 
 from column_definitions import standard_columns, key_mapping
+_REQUESTS_TIMEOUT = 3.0
 
 def convert_columns(input_record):
     # make an empty record
@@ -46,7 +47,7 @@ def retrieve_airtable_data(table, api_key):
     airtable_records = []
     run = True
     while run:
-        response = requests.get(url, params=params, headers=headers)
+        response = requests.get(url, params=params, headers=headers, timeout=_REQUESTS_TIMEOUT)
         airtable_response = response.json()
         airtable_records += (airtable_response['records'])
         if 'offset' in airtable_response:
