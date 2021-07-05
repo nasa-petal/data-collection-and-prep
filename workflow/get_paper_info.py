@@ -391,6 +391,7 @@ class PaperInfoScienceDirect(PaperInfo):
         print(f"pdf_link: {pdf_link}")
         return pdf_link
 
+
 class PaperInfoSpringer(PaperInfo):
     base_api_url = "http://api.springernature.com/meta/v2/json"
 
