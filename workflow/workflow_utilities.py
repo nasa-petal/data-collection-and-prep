@@ -5,6 +5,8 @@ import traceback
 
 from get_paper_info import get_paper_info, which_literature_site
 
+_REQUESTS_TIMEOUT = 3.0 # used as the timeout argument to requests.get calls.
+
 def labels_fix(labels):
     '''
     Deal with empty labels and convert them to a list if they are not
