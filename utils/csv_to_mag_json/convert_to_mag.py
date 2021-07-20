@@ -104,6 +104,7 @@ def get_mag_data(dataframe: pd.DataFrame):
         if (r.status_code == 200):
             temp_response = json.loads(r.text)["entities"]
             mag_res += temp_response
+
     mag_dois = list(map(lambda paper: paper.get("DOI", ""), mag_res))
     return (mag_res, mag_dois)
 
@@ -176,9 +177,10 @@ if __name__ == "__main__":
     golden_jsons = convert_to_json(dataframe, mag_res, mag_dois)
 
     # Write json data to a json file
-    with open(f"{args.output_name}.json", "w") as golden_file:
+    with open(f"{args.output_name}.json", "a") as golden_file:
         golden_file.write("[\n")
         golden_size = len(golden_jsons)
+
         for index in range(golden_size):
             golden_file.write("\t")
             golden_file.write(json.dumps(golden_jsons[index]))
