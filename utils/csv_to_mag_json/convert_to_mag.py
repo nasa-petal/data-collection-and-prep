@@ -46,7 +46,7 @@ def clean_text(text: string):
 
     tokenized_text = nltk.tokenize.word_tokenize(text)
     cleaned_text = [re.sub(r"([^A-z0-9]|\\u....)","", text.lower(
-    )) for text in tokenized_text if text not in special_characters and text not in stopwords]
+    )).encode("ascii","ignore").decode() for text in tokenized_text if text not in special_characters and text not in stopwords]
     cleaned_text = [text for text in cleaned_text if text != ""]
 
     return cleaned_text
@@ -138,24 +138,27 @@ def convert_to_json(dataframe: pd.DataFrame, mag_res: list, mag_dois: list):
             temp_dict["paper"] = mag_paper["Id"]
             temp_dict["mag"] = mag_paper.get("F", []) and list(
                 map(lambda field: field["FN"], mag_paper["F"]))
-            temp_dict["venue"] = [mag_paper.get("VFN", None)]
+            temp_dict["venue_mag"] = [mag_paper.get("VFN", None)]
             temp_dict["author"] = mag_paper.get("AA", []) and list(
                 map(lambda field: field["AuId"], mag_paper["AA"]))
             temp_dict["reference"] = mag_paper.get("RId", [])
-            temp_dict["abstract"] = mag_paper.get("AW", (row["abstract"] and clean_labels(
-                row["abstract"])) or [])  # and clean_text(row["abstract"])
+            if (mag_paper.get("AW", False)):
+                temp_dict["abstract"] = [word.encode("ascii", "ignore").decode() for word in mag_paper.get("AW")]
+            else:
+                temp_dict["abstract"] = mag_paper.get("AW", (row["abstract"] and clean_text(
+                    row["abstract"])) or [])
         else:
             temp_dict["paper"] = ""
             temp_dict["mag"] = []
-            temp_dict["venue"] = (eval(row["journal"]) if (len(row["journal"]) and row["journal"][0] =="[") else row["journal"]) or []
             temp_dict["author"] = []
             temp_dict["reference"] = []
-            # (row["abstract"] and clean_labels(row["abstract"])) or []
-            temp_dict["abstract"] = []
+            temp_dict["venue_mag"] = []
+            temp_dict["abstract"] = (row["abstract"] and clean_text("abstract")) or []
 
         temp_dict["petalID"] = index
         temp_dict["doi"] = row["doi"].upper()
         temp_dict["title"] = (row["title"] and clean_text(row["title"])) or []
+        temp_dict["venue"] = (eval(row["journal"]) if (len(row["journal"]) and row["journal"][0] =="[") else row["journal"]) or []
         temp_dict["level1"] = row["label_level_1"] and clean_labels(
             eval(row["label_level_1"]))
         temp_dict["level2"] = row["label_level_2"] and clean_labels(
