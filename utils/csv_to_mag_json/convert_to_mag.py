@@ -138,7 +138,7 @@ def convert_to_json(dataframe: pd.DataFrame, mag_res: list, mag_dois: list):
             temp_dict["paper"] = mag_paper["Id"]
             temp_dict["mag"] = mag_paper.get("F", []) and list(
                 map(lambda field: field["FN"], mag_paper["F"]))
-            temp_dict["venue_mag"] = [mag_paper.get("VFN", None)]
+            temp_dict["venue_mag"] = [mag_paper["VFN"]] if mag_paper.get("VFN", False) else []
             temp_dict["author"] = mag_paper.get("AA", []) and list(
                 map(lambda field: field["AuId"], mag_paper["AA"]))
             temp_dict["reference"] = mag_paper.get("RId", [])
@@ -189,5 +189,7 @@ if __name__ == "__main__":
             golden_file.write("\t")
             golden_file.write(json.dumps(golden_jsons[index]))
 
-            if(index < golden_size):
+            if(index < golden_size - 1):
                 golden_file.write(",\n")
+
+        golden_file.write("\n]")
