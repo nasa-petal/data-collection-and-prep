@@ -17,7 +17,7 @@ special_characters = string.punctuation
 def get_arg_parser():
     """Allows arguments to be passed into this program through the terminal.
     Returns:
-        argparse.ArgumentParser.parseArgs(): Object containing selected options
+        argparse.Namespace: Object containing selected options
     """
 
     def dir_path(string):
@@ -45,8 +45,8 @@ def clean_text(text: string):
     """
 
     tokenized_text = nltk.tokenize.word_tokenize(text)
-    cleaned_text = [re.sub(r"([^A-z0-9]|\\u....)","", text.lower(
-    )).encode("ascii","ignore").decode() for text in tokenized_text if text not in special_characters and text not in stopwords]
+    cleaned_text = [text.lower(
+    ) for text in tokenized_text if text not in special_characters and text not in stopwords]
     cleaned_text = [text for text in cleaned_text if text != ""]
 
     return cleaned_text
@@ -64,7 +64,7 @@ def clean_labels(labels: list):
 
     clean_labels = [re.sub("\s", "_", label).lower()
                     for label in labels]
-    return clean_labels
+    return clean_labels if clean_labels != "" else []
 
 
 def get_mag_data(dataframe: pd.DataFrame):
@@ -90,7 +90,7 @@ def get_mag_data(dataframe: pd.DataFrame):
         "count": batch_size
     }
 
-    # Make DOI requests in batches of 20
+    # Make DOI requests in batches
     paper_dois = [f"DOI='{doi.upper()}'" for doi in dataframe["doi"]]
     total_size = math.ceil(len(paper_dois)/batch_size)
     mag_res = []
@@ -142,8 +142,14 @@ def convert_to_json(dataframe: pd.DataFrame, mag_res: list, mag_dois: list):
             temp_dict["author"] = mag_paper.get("AA", []) and list(
                 map(lambda field: field["AuId"], mag_paper["AA"]))
             temp_dict["reference"] = mag_paper.get("RId", [])
+
+            if (mag_paper.get("Ti", False)):
+                temp_dict["title"] = clean_text(mag_paper["Ti"])
+            else:
+                temp_dict["title"] = (row["title"] and clean_text(row["title"])) or []
+
             if (mag_paper.get("AW", False)):
-                temp_dict["abstract"] = [word.encode("ascii", "ignore").decode() for word in mag_paper.get("AW")]
+                temp_dict["abstract"] = mag_paper["AW"]
             else:
                 temp_dict["abstract"] = mag_paper.get("AW", (row["abstract"] and clean_text(
                     row["abstract"])) or [])
@@ -154,17 +160,17 @@ def convert_to_json(dataframe: pd.DataFrame, mag_res: list, mag_dois: list):
             temp_dict["reference"] = []
             temp_dict["venue_mag"] = []
             temp_dict["abstract"] = (row["abstract"] and clean_text("abstract")) or []
+            temp_dict["title"] = (row["title"] and clean_text(row["title"])) or []
 
         temp_dict["petalID"] = index
         temp_dict["doi"] = row["doi"].upper()
-        temp_dict["title"] = (row["title"] and clean_text(row["title"])) or []
         temp_dict["venue"] = (eval(row["journal"]) if (len(row["journal"]) and row["journal"][0] =="[") else row["journal"]) or []
-        temp_dict["level1"] = row["label_level_1"] and clean_labels(
-            eval(row["label_level_1"]))
-        temp_dict["level2"] = row["label_level_2"] and clean_labels(
-            eval(row["label_level_2"]))
-        temp_dict["level3"] = row["label_level_3"] and clean_labels(
-            eval(row["label_level_3"]))
+        temp_dict["level1"] = (row["label_level_1"] and clean_labels(
+            eval(row["label_level_1"]))) or []
+        temp_dict["level2"] = (row["label_level_2"] and clean_labels(
+            eval(row["label_level_2"]))) or []
+        temp_dict["level3"] = (row["label_level_3"] and clean_labels(
+            eval(row["label_level_3"]))) or []
         temp_dict["url"] = row["url"]
         temp_dict["fullDocLink"] = row["full_doc_link"]
         temp_dict["isOpenAccess"] = row["is_open_access"]
@@ -175,13 +181,13 @@ def convert_to_json(dataframe: pd.DataFrame, mag_res: list, mag_dois: list):
 
 if __name__ == "__main__":
     args = get_arg_parser()
-    dataframe = pd.read_csv(args.csv_path)
+    dataframe = pd.read_csv(args.csv_path, encoding="utf8")
     dataframe = dataframe.fillna("")
     (mag_res, mag_dois) = get_mag_data(dataframe)
     golden_jsons = convert_to_json(dataframe, mag_res, mag_dois)
 
     # Write json data to a json file
-    with open(f"{args.output_name}.json", "a") as golden_file:
+    with open(f"{args.output_name}.json", "w") as golden_file:
         golden_file.write("[\n")
         golden_size = len(golden_jsons)
 
