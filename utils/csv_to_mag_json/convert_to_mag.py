@@ -8,6 +8,7 @@ from decouple import config
 import math
 import os
 import argparse
+import unicodedata
 
 # Global Variables
 stopwords = nltk.corpus.stopwords.words('english')
@@ -45,8 +46,10 @@ def clean_text(text: string):
     """
 
     tokenized_text = nltk.tokenize.word_tokenize(text)
-    cleaned_text = [text.lower(
-    ) for text in tokenized_text if text not in special_characters and text not in stopwords]
+    cleaned_text = [unicodedata.normalize('NFKD', text).encode('ascii', 'ignore').decode('utf-8', 'ignore').lower(
+    ) for text in tokenized_text if text not in special_characters \
+        and text not in stopwords \
+            and re.search(r"([^A-z0-9]|\\u....)", text) == None]
     cleaned_text = [text for text in cleaned_text if text != ""]
 
     return cleaned_text
@@ -138,7 +141,8 @@ def convert_to_json(dataframe: pd.DataFrame, mag_res: list, mag_dois: list):
             temp_dict["paper"] = mag_paper["Id"]
             temp_dict["mag"] = mag_paper.get("F", []) and list(
                 map(lambda field: field["FN"], mag_paper["F"]))
-            temp_dict["venue_mag"] = [mag_paper["VFN"]] if mag_paper.get("VFN", False) else []
+            temp_dict["venue_mag"] = [mag_paper["VFN"]
+                                      ] if mag_paper.get("VFN", False) else []
             temp_dict["author"] = mag_paper.get("AA", []) and list(
                 map(lambda field: field["AuId"], mag_paper["AA"]))
             temp_dict["reference"] = mag_paper.get("RId", [])
@@ -146,10 +150,12 @@ def convert_to_json(dataframe: pd.DataFrame, mag_res: list, mag_dois: list):
             if (mag_paper.get("Ti", False)):
                 temp_dict["title"] = clean_text(mag_paper["Ti"])
             else:
-                temp_dict["title"] = (row["title"] and clean_text(row["title"])) or []
+                temp_dict["title"] = (
+                    row["title"] and clean_text(row["title"])) or []
 
             if (mag_paper.get("AW", False)):
-                temp_dict["abstract"] = mag_paper["AW"]
+                temp_dict["abstract"] = [word.encode("ascii", "ignore").decode(
+                ) for word in mag_paper.get("AW") if word.encode("ascii", "ignore").decode() != ""]
             else:
                 temp_dict["abstract"] = mag_paper.get("AW", (row["abstract"] and clean_text(
                     row["abstract"])) or [])
@@ -159,12 +165,15 @@ def convert_to_json(dataframe: pd.DataFrame, mag_res: list, mag_dois: list):
             temp_dict["author"] = []
             temp_dict["reference"] = []
             temp_dict["venue_mag"] = []
-            temp_dict["abstract"] = (row["abstract"] and clean_text("abstract")) or []
-            temp_dict["title"] = (row["title"] and clean_text(row["title"])) or []
+            temp_dict["abstract"] = (
+                row["abstract"] and clean_text("abstract")) or []
+            temp_dict["title"] = (
+                row["title"] and clean_text(row["title"])) or []
 
         temp_dict["petalID"] = index
         temp_dict["doi"] = row["doi"].upper()
-        temp_dict["venue"] = (eval(row["journal"]) if (len(row["journal"]) and row["journal"][0] =="[") else row["journal"]) or []
+        temp_dict["venue"] = (eval(row["journal"]) if (
+            len(row["journal"]) and row["journal"][0] == "[") else row["journal"]) or []
         temp_dict["level1"] = (row["label_level_1"] and clean_labels(
             eval(row["label_level_1"]))) or []
         temp_dict["level2"] = (row["label_level_2"] and clean_labels(
