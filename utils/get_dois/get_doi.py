@@ -33,9 +33,19 @@ def pull_doi(url):
         # need to use a more sophisticated doi regex
         #   https://www.crossref.org/blog/dois-and-matching-regular-expressions/
         #   https://www.regextester.com/93795
-        doi = soup(text=re.compile(r'/^10.\d{4,9}/[-._;()/:A-Z0-9]+$/i'))[0].strip()
-        #removing all characters before first number in DOI
-        doi = re.search('[0-9].*', doi)[0]
+        doi = soup(text=re.compile(r'/^10.\d{4,9}/[-._;()/:A-Z0-9]+$/i'))
+        
+        if len(doi) == 0:
+            doi = soup(text=re.compile(r'\b(10[.][0-9]{4,}(?:[.][0-9]+)*/(?:(?![\"&\'<>])\S)+)\b'))
+        if len(doi) == 0:
+            doi = re.search(r'\b(10[.][0-9]{4,}(?:[.][0-9]+)*/(?:(?![\"&\'<>])\S)+)\b', url).groups()
+            
+        if len(doi):
+            doi = doi[0].strip()
+            #removing all characters before first number in DOI
+            doi = re.search('[0-9].*', doi)[0]
+        else:
+            doi =""
 
     return doi
 
